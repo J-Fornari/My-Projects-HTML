@@ -26,7 +26,7 @@
 
 Este repositório reúne pequenos trechos de código úteis para o dia a dia de desenvolvimento. 
 
-> **Nota de Crédito:** Este projeto é um *fork* baseado no repositório original do autor **Aduok**, customizado e expandido por **João Fornari** com novas anotações, exemplos práticos e refinamentos.
+> **Nota de Crédito:** Este projeto é uma inspiração e foi baseado no repositório original do autor **Aduok**, customizado e expandido por **João Fornari** com novas anotações, exemplos práticos e refinamentos.
 
 ---
 
