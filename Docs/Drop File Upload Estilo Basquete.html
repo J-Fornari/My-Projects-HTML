@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Basketball File Uploader — Componente Interativo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      /* Palette & Design Tokens */
+      --bg-panel: #edf0f5;
+      --bg-card: #ffffff;
+      --text-main: #131a23;
+      --text-muted: #68717f;
+      --border-color: #c3c9d3;
+      --chip-bg: #e1e5ec;
+      --accent-orange: #e2723a;
+      --accent-orange-deep: #c4552a;
+      --accent-tint: #fdf0e6;
+      --net-color: #a9afb9;
+      --status-ok: #389a66;
+      --paper-color: #ffffff;
+      --fold-color: #e4e7ec;
+      --fileline-color: #d3d7de;
+      --badge-pdf: #d94a5f;
+      --shadow-elevation: rgba(24, 34, 54, 0.18);
+      --font-primary: 'Figtree', system-ui, -apple-system, sans-serif;
+      --radius-lg: 16px;
+      --radius-md: 10px;
+      --radius-sm: 6px;
+      --transition-base: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg-panel: #0f141c;
+        --bg-card: #18202a;
+        --text-main: #edf0f4;
+        --text-muted: #8c96a4;
+        --border-color: #2c3542;
+        --chip-bg: #212936;
+        --accent-orange: #ef8450;
+        --accent-orange-deep: #d46a38;
+        --accent-tint: #2a1f18;
+        --net-color: #5b6572;
+        --status-ok: #42b879;
+        --paper-color: #f1f3f6;
+        --fold-color: #d5d9df;
+        --fileline-color: #c5cad3;
+        --badge-pdf: #e2566b;
+        --shadow-elevation: rgba(0, 0, 0, 0.45);
+        color-scheme: dark;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background-color: var(--bg-panel);
+      color: var(--text-main);
+      font-family: var(--font-primary);
+      font-size: 14px;
+      line-height: 1.5;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .stage {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .world {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform-origin: 0 0;
+      z-index: 5;
+    }
+
+    /* Header Controls */
+    .head {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      z-index: 20;
+      pointer-events: none;
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .head-info {
+      min-width: 0;
+    }
+
+    .title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
+
+    .subtitle {
+      margin-top: 2px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .actions {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.875rem;
+      padding: 9px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      border-color: var(--accent-orange);
+      color: var(--accent-orange-deep);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--accent-orange);
+      outline-offset: 2px;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border-color: transparent;
+      color: var(--text-muted);
+    }
+
+    .btn-ghost:hover {
+      background: var(--chip-bg);
+      color: var(--text-main);
+    }
+
+    .badge {
+      background: var(--chip-bg);
+      color: var(--text-muted);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border-color);
+      pointer-events: auto;
+    }
+
+    .badge b {
+      color: var(--text-main);
+      font-size: 1rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .badge.bump b {
+      animation: bump 0.4s ease-out;
+    }
+
+    @keyframes bump {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.4); color: var(--accent-orange); }
+      100% { transform: scale(1); }
+    }
+
+    /* Hoop Arena */
+    .hoop-group {
+      position: absolute;
+      width: 400px;
+      height: 260px;
+    }
+
+    .drop-zone {
+      position: absolute;
+      left: 84px;
+      top: 10px;
+      width: 232px;
+      height: 150px;
+      z-index: 1;
+      background: var(--bg-card);
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--transition-base), border-color var(--transition-base);
+    }
+
+    .drop-zone svg {
+      width: 28px;
+      height: 28px;
+      color: var(--text-muted);
+      transition: color var(--transition-base);
+    }
+
+    .zone-title {
+      margin-top: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .zone-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .drop-zone.hot {
+      background: var(--accent-tint);
+      border-color: var(--accent-orange);
+    }
+
+    .drop-zone.hot svg {
+      color: var(--accent-orange);
+    }
+
+    .hoop {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 400px;
+      height: 260px;
+      z-index: 3;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .hoop .board { fill: none; stroke: var(--accent-orange); stroke-width: 3; }
+    .hoop .rim { fill: none; stroke: var(--accent-orange); stroke-width: 5; }
+    .hoop .bracket { fill: var(--accent-orange-deep); }
+    .hoop .meshline { fill: none; stroke: var(--net-color); stroke-width: 1.5; stroke-linecap: round; }
+    
+    .net { transform-origin: 200px 166px; }
+    .net.swish { animation: swish 0.55s ease-out; }
+
+    @keyframes swish {
+      0% { transform: scale(1, 1); }
+      30% { transform: scale(0.88, 1.15); }
+      60% { transform: scale(1.05, 0.95); }
+      100% { transform: scale(1, 1); }
+    }
+
+    .score-pop {
+      position: absolute;
+      left: 256px;
+      top: 92px;
+      z-index: 6;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent-orange);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .score-pop.active { animation: pop 0.9s ease-out; }
+
+    @keyframes pop {
+      0% { opacity: 0; transform: translateY(12px) scale(0.6); }
+      30% { opacity: 1; transform: translateY(-6px) scale(1.2); }
+      70% { opacity: 1; transform: translateY(-12px) scale(1); }
+      100% { opacity: 0; transform: translateY(-24px) scale(0.9); }
+    }
+
+    /* Trajectory Aiming */
+    .dot {
+      position: absolute;
+      left: -3px;
+      top: -3px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-orange);
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .aim {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .aim line.arrow { stroke: var(--accent-orange); stroke-width: 4; stroke-linecap: round; }
+    .aim path { fill: var(--accent-orange); }
+    .aim line.band { stroke: var(--text-muted); stroke-width: 2; stroke-dasharray: 4 6; opacity: 0.6; }
+    .aim.target-locked line.arrow { stroke: var(--status-ok); }
+    .aim.target-locked path { fill: var(--status-ok); }
+
+    /* File Entity */
+    .file {
+      position: absolute;
+      left: -28px;
+      top: -34px;
+      width: 56px;
+      height: 68px;
+      z-index: 5;
+      cursor: grab;
+      touch-action: none;
+      will-change: transform;
+      border-radius: var(--radius-sm);
+    }
+
+    .file::after {
+      content: "";
+      position: absolute;
+      inset: -16px;
+    }
+
+    .file.grabbing { cursor: grabbing; }
+    .file.hidden-file { opacity: 0; pointer-events: none; }
+    .file:focus-visible { outline: 2px solid var(--accent-orange); outline-offset: 6px; }
+
+    .file .inner { width: 100%; height: 100%; }
+    .file svg { display: block; width: 56px; height: 68px; filter: drop-shadow(0 8px 12px var(--shadow-elevation)); }
+    
+    .file.idle .inner { animation: floatBob 2.6s ease-in-out infinite; }
+    .file.idle.enter .inner { animation: scaleEnter 0.35s ease-out, floatBob 2.6s ease-in-out 0.35s infinite; }
+
+    @keyframes floatBob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @keyframes scaleEnter {
+      from { transform: scale(0.4); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .file-caption {
+      position: absolute;
+      transform: translateX(-50%);
+      width: 180px;
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: opacity 0.2s;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Bottom Uploads Dock */
+    .dock {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 10;
+      pointer-events: none;
+      padding: 0 24px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-message {
+      margin: 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+      min-height: 20px;
+    }
+
+    .upload-list {
+      list-style: none;
+      width: 100%;
+      max-width: 540px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .upload-item {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) minmax(90px, 30%) auto;
+      gap: 14px;
+      align-items: center;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 10px 25px -5px var(--shadow-elevation);
+      animation: slideUp 0.35s ease-out;
+      pointer-events: auto;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .file-icon svg { display: block; width: 32px; height: 38px; }
+
+    .file-info {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .file-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-size {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .progress-container {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .progress-text {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .progress-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--chip-bg);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      display: block;
+      height: 100%;
+      background: var(--status-ok);
+      transform-origin: left;
+      transform: scaleX(0);
+      transition: transform 0.1s linear;
+    }
+
+    .status-check {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--status-ok);
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .status-check svg { width: 14px; height: 14px; stroke: #fff; }
+
+    .upload-item.completed .progress-text { color: var(--status-ok); }
+    .upload-item.completed .status-check { opacity: 1; transform: scale(1); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .file.idle .inner,
+      .net.swish,
+      .score-pop.active,
+      .upload-item { animation: none !important; }
+      .score-pop.active { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+  <div class="world" id="world">
+    <!-- Hoop Arena -->
+    <div class="hoop-group" id="hoopGroup">
+      <div class="drop-zone" id="dropZone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 15V4"/><path d="M7.5 8.5 12 4l4.5 4.5"/><path d="M5 12.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5.5"/>
+        </svg>
+        <span class="zone-title">Arraste seus arquivos</span>
+        <span class="zone-sub">ou faça o arremesso</span>
+      </div>
+      
+      <svg class="hoop" viewBox="0 0 400 260" aria-hidden="true">
+        <rect class="board" x="150" y="96" width="100" height="56" rx="3"/>
+        <g class="net" id="net"><path class="meshline" id="netMesh"/></g>
+        <rect class="bracket" x="191" y="157" width="18" height="9" rx="2"/>
+        <ellipse class="rim" cx="200" cy="166" rx="52" ry="6"/>
+      </svg>
+      
+      <div class="score-pop" id="scorePop">+1</div>
+    </div>
+
+    <!-- Aim Line & Dots -->
+    <div id="trajectoryDots"></div>
+    <svg class="aim" id="aimSvg" aria-hidden="true" hidden>
+      <line class="band" id="aimBand" x1="0" y1="0" x2="0" y2="0"/>
+      <line class="arrow" id="aimLine" x1="0" y1="0" x2="0" y2="0"/>
+      <path id="aimHead" d=""/>
+    </svg>
+
+    <!-- File Ball Component -->
+    <div class="file idle" id="fileBall" role="button" tabindex="0" aria-label="Arremessar arquivo na cesta">
+      <div class="inner" id="fileInner"></div>
+    </div>
+    <div class="file-caption" id="fileCaption"></div>
+  </div>
+
+  <!-- Main Header -->
+  <header class="head">
+    <div class="head-info">
+      <h1 class="title">Upload de Arquivos</h1>
+      <p class="subtitle">Arraste e solte ou arremesse para enviar seus documentos.</p>
+      <div class="actions">
+        <button class="btn" id="btnBrowse" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Selecionar Arquivo
+        </button>
+        <button class="btn btn-ghost" id="btnAutoShot" type="button">Auto Arremesso</button>
+      </div>
+    </div>
+    <div class="badge" id="uploadBadge">Enviados: <b id="uploadedCount">0</b></div>
+  </header>
+
+  <!-- Upload Queue & Status -->
+  <div class="dock">
+    <p class="status-message" id="statusMessage" aria-live="polite">Puxe o arquivo para trás e solte para arremessar.</p>
+    <ul class="upload-list" id="uploadList"></ul>
+  </div>
+
+  <input type="file" id="fileInput" multiple hidden>
+</div>
+
+<script>
+/**
+ * Basketball File Uploader Component
+ * Arquitetura Orientada a Objetos com Física 2D e Gerenciamento de Upload
+ */
+class BasketballUploader {
+  constructor(config = {}) {
+    this.config = Object.assign({
+      uploadEndpoint: null, // URL do backend para envio real (Fetch API)
+      simulatedUploadDelay: 1500,
+      maxHistoryItems: 3
+    }, config);
+
+    this.initDOM();
+    this.initPhysicsState();
+    this.buildNetMesh();
+    this.initTrajectoryDots();
+    this.bindEvents();
+    this.layout();
+    
+    this.lastTimestamp = performance.now();
+    requestAnimationFrame(this.loop.bind(this));
+  }
+
+  initDOM() {
+    this.dom = {
+      stage: document.getElementById('stage'),
+      world: document.getElementById('world'),
+      hoopGroup: document.getElementById('hoopGroup'),
+      dropZone: document.getElementById('dropZone'),
+      net: document.getElementById('net'),
+      netMesh: document.getElementById('netMesh'),
+      scorePop: document.getElementById('scorePop'),
+      fileBall: document.getElementById('fileBall'),
+      fileInner: document.getElementById('fileInner'),
+      fileCaption: document.getElementById('fileCaption'),
+      trajectoryDots: document.getElementById('trajectoryDots'),
+      aimSvg: document.getElementById('aimSvg'),
+      aimBand: document.getElementById('aimBand'),
+      aimLine: document.getElementById('aimLine'),
+      aimHead: document.getElementById('aimHead'),
+      statusMessage: document.getElementById('statusMessage'),
+      uploadList: document.getElementById('uploadList'),
+      uploadedCount: document.getElementById('uploadedCount'),
+      uploadBadge: document.getElementById('uploadBadge'),
+      btnBrowse: document.getElementById('btnBrowse'),
+      btnAutoShot: document.getElementById('btnAutoShot'),
+      fileInput: document.getElementById('fileInput')
+    };
+
+    this.queue = [];
+    this.uploadedTotal = 0;
+    this.defaultFile = { name: 'documento_exemplo.pdf', size: 2.4 * 1024 * 1024 };
+    this.dragState = null;
+    this.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  initPhysicsState() {
+    this.PHYSICS = {
+      G: 1000,
+      K: 8,
+      MAXPULL: 150,
+      RADIUS: 11,
+      DT: 1 / 60
+    };
+
+    this.layoutMetrics = {
+      scale: 1,
+      worldW: 400,
+      worldH: 700,
+      floorY: 680,
+      rimY: 176,
+      rimLeft: 150,
+      rimRight: 250,
+      centerX: 200,
+      restY: 262,
+      homePos: { x: 90, y: 480 }
+    };
+
+    this.state = {
+      mode: 'idle', // 'idle' | 'drag' | 'flying' | 'returning'
+      x: this.layoutMetrics.homePos.x,
+      y: this.layoutMetrics.homePos.y,
+      vx: 0,
+      vy: 0,
+      rot: 0,
+      rotVel: 0,
+      time: 0,
+      scored: false,
+      onFloor: false,
+      fading: false,
+      returnTime: 0,
+      fromX: 0,
+      fromY: 0,
+      fromRot: 0
+    };
+  }
+
+  buildNetMesh() {
+    let d = '';
+    const top = [], bot = [];
+    for (let i = 0; i < 7; i++) {
+      top.push(152 + i * 16);
+      bot.push(174 + i * (52 / 6));
+    }
+    for (let i = 0; i < 7; i++) d += `M${top[i]} 168 L${bot[i].toFixed(1)} 236 `;
+    for (let i = 0; i < 6; i++) {
+      d += `M${top[i]} 168 L${bot[i + 1].toFixed(1)} 236 `;
+      d += `M${top[i + 1]} 168 L${bot[i].toFixed(1)} 236 `;
+    }
+    this.dom.netMesh.setAttribute('d', d);
+  }
+
+  initTrajectoryDots() {
+    this.dots = [];
+    for (let i = 0; i < 24; i++) {
+      const dot = document.createElement('i');
+      dot.className = 'dot';
+      dot.hidden = true;
+      this.dom.trajectoryDots.appendChild(dot);
+      this.dots.push(dot);
+    }
+  }
+
+  getFileExtension(filename) {
+    const idx = filename.lastIndexOf('.');
+    if (idx < 0) return 'FILE';
+    return filename.slice(idx + 1).replace(/[^a-z0-9]/gi, '').slice(0, 4).toUpperCase() || 'FILE';
+  }
+
+  getFileIconSvg(ext) {
+    return `<svg viewBox="0 0 56 68" aria-hidden="true">
+      <path d="M8 2H36L54 20V60Q54 66 48 66H8Q2 66 2 60V8Q2 2 8 2Z" fill="var(--paper-color)"/>
+      <path d="M36 2V14Q36 20 42 20H54Z" fill="var(--fold-color)"/>
+      <rect x="10" y="28" width="30" height="3" rx="1.5" fill="var(--fileline-color)"/>
+      <rect x="10" y="35" width="24" height="3" rx="1.5" fill="var(--fileline-color)"/>
+      <rect x="10" y="42" width="28" height="3" rx="1.5" fill="var(--fileline-color)"/>
+      <rect x="8" y="50" width="28" height="12" rx="3" fill="var(--badge-pdf)"/>
+      <text x="22" y="59" font-size="8" font-weight="700" text-anchor="middle" fill="#fff" font-family="Figtree, sans-serif">${ext}</text>
+    </svg>`;
+  }
+
+  formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return Math.round(bytes / 1024) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+  }
+
+  peekQueue() {
+    return this.queue.length ? this.queue[0] : this.defaultFile;
+  }
+
+  popQueue() {
+    return this.queue.length ? this.queue.shift() : { ...this.defaultFile };
+  }
+
+  updateActiveLabel() {
+    const file = this.peekQueue();
+    this.dom.fileCaption.textContent = file.name;
+    this.dom.fileInner.innerHTML = this.getFileIconSvg(this.getFileExtension(file.name));
+    this.dom.fileBall.setAttribute('aria-label', `Arremessar ${file.name} na cesta`);
+  }
+
+  setStatus(msg) {
+    this.dom.statusMessage.textContent = msg;
+  }
+
+  layout() {
+    const W = this.dom.stage.clientWidth || 400;
+    const H = this.dom.stage.clientHeight || 700;
+    
+    const scale = Math.max(0.75, Math.min(1.3, Math.min(W / 430, H / 680)));
+    this.layoutMetrics.scale = scale;
+    
+    const worldW = W / scale;
+    const worldH = H / scale;
+    this.layoutMetrics.worldW = worldW;
+    this.layoutMetrics.worldH = worldH;
+
+    this.dom.world.style.width = `${worldW}px`;
+    this.dom.world.style.height = `${worldH}px`;
+    this.dom.world.style.transform = `scale(${scale})`;
+
+    const headHeight = document.querySelector('.head').offsetHeight + 8;
+    const offsetX = worldW / 2 - 200;
+    const offsetY = headHeight / scale - 10;
+
+    this.dom.hoopGroup.style.left = `${offsetX}px`;
+    this.dom.hoopGroup.style.top = `${offsetY}px`;
+
+    this.layoutMetrics.rimY = 166 + offsetY;
+    this.layoutMetrics.rimLeft = 150 + offsetX;
+    this.layoutMetrics.rimRight = 250 + offsetX;
+    this.layoutMetrics.centerX = 200 + offsetX;
+    this.layoutMetrics.restY = 252 + offsetY;
+    this.layoutMetrics.floorY = worldH - 18;
+
+    this.PHYSICS.MAXPULL = Math.max(120, Math.min(210, worldH * 0.26));
+    this.layoutMetrics.homePos.x = Math.max(76, Math.min(300, worldW * 0.24));
+    this.layoutMetrics.homePos.y = Math.max(this.layoutMetrics.rimY + 170, worldH - this.PHYSICS.MAXPULL - 30);
+
+    const apex = this.layoutMetrics.rimY - 90;
+    const vyN = Math.sqrt(2 * this.PHYSICS.G * (this.layoutMetrics.homePos.y - apex));
+    const T = vyN / this.PHYSICS.G + Math.sqrt(2 * (this.layoutMetrics.rimY - apex) / this.PHYSICS.G);
+    const vxN = (this.layoutMetrics.centerX - this.layoutMetrics.homePos.x) / T;
+    
+    this.PHYSICS.K = (Math.hypot(vxN, vyN) * 1.35) / this.PHYSICS.MAXPULL;
+
+    this.dom.fileCaption.style.left = `${this.layoutMetrics.homePos.x}px`;
+    this.dom.fileCaption.style.top = `${this.layoutMetrics.homePos.y + 44}px`;
+
+    if (this.state.mode === 'idle') {
+      this.state.x = this.layoutMetrics.homePos.x;
+      this.state.y = this.layoutMetrics.homePos.y;
+      this.renderState();
+    }
+  }
+
+  bindEvents() {
+    window.addEventListener('resize', () => this.layout());
+
+    // Eventos de Pointer para Arremesso
+    this.dom.fileBall.addEventListener('pointerdown', (e) => this.onPointerDown(e));
+    this.dom.fileBall.addEventListener('pointermove', (e) => this.onPointerMove(e));
+    this.dom.fileBall.addEventListener('pointerup', (e) => this.onPointerUp(e));
+    this.dom.fileBall.addEventListener('pointercancel', (e) => this.onPointerUp(e));
+
+    // Acessibilidade por Teclado
+    this.dom.fileBall.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this.triggerAutoShot();
+      }
+    });
+
+    // Ações dos Botões
+    this.dom.btnBrowse.addEventListener('click', () => this.dom.fileInput.click());
+    this.dom.btnAutoShot.addEventListener('click', () => this.triggerAutoShot());
+
+    this.dom.fileInput.addEventListener('change', () => this.handleFileSelect());
+
+    // Drag and Drop Global de Arquivos
+    const hasFiles = (e) => e.dataTransfer && e.dataTransfer.types && Array.prototype.indexOf.call(e.dataTransfer.types, 'Files') >= 0;
+
+    this.dom.stage.addEventListener('dragover', (e) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      this.dom.dropZone.classList.add('hot');
+    });
+
+    this.dom.stage.addEventListener('dragleave', (e) => {
+      if (!e.relatedTarget || !this.dom.stage.contains(e.relatedTarget)) {
+        this.dom.dropZone.classList.remove('hot');
+      }
+    });
+
+    this.dom.stage.addEventListener('drop', (e) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      this.dom.dropZone.classList.remove('hot');
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length) this.processExternalFiles(files);
+    });
+  }
+
+  onPointerDown(e) {
+    if (this.state.mode !== 'idle') return;
+    e.preventDefault();
+    try { this.dom.fileBall.setPointerCapture(e.pointerId); } catch (err) {}
+
+    this.dragState = { id: e.pointerId };
+    this.state.mode = 'drag';
+    this.dom.fileBall.classList.remove('idle', 'enter');
+    this.dom.fileBall.classList.add('grabbing');
+    this.dom.fileCaption.style.opacity = '0';
+  }
+
+  onPointerMove(e) {
+    if (!this.dragState || e.pointerId !== this.dragState.id) return;
+
+    const rect = this.dom.world.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / this.layoutMetrics.scale;
+    const py = (e.clientY - rect.top) / this.layoutMetrics.scale;
+
+    let dx = px - this.layoutMetrics.homePos.x;
+    let dy = py - this.layoutMetrics.homePos.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist > this.PHYSICS.MAXPULL) {
+      dx *= this.PHYSICS.MAXPULL / dist;
+      dy *= this.PHYSICS.MAXPULL / dist;
+    }
+
+    dy = Math.min(dy, this.layoutMetrics.worldH - 24 - this.layoutMetrics.homePos.y);
+
+    this.state.x = this.layoutMetrics.homePos.x + dx;
+    this.state.y = this.layoutMetrics.homePos.y + dy;
+    this.state.rot = Math.max(-20, Math.min(20, dx * 0.15));
+
+    this.renderState();
+    this.drawPreviewDots(-dx * this.PHYSICS.K, -dy * this.PHYSICS.K);
+  }
+
+  onPointerUp(e) {
+    if (!this.dragState || e.pointerId !== this.dragState.id) return;
+    this.dragState = null;
+
+    const dx = this.state.x - this.layoutMetrics.homePos.x;
+    const dy = this.state.y - this.layoutMetrics.homePos.y;
+
+    this.hideTrajectory();
+
+    if (Math.hypot(dx, dy) < 16) {
+      this.resetToHome(false);
+      return;
+    }
+
+    this.launch(-dx * this.PHYSICS.K, -dy * this.PHYSICS.K);
+  }
+
+  hideTrajectory() {
+    this.dots.forEach(d => d.hidden = true);
+    this.dom.aimSvg.hidden = true;
+  }
+
+  drawPreviewDots(vx, vy) {
+    const speed = Math.hypot(vx, vy);
+    if (speed / this.PHYSICS.K < 12) {
+      this.hideTrajectory();
+      return;
+    }
+
+    let x = this.state.x;
+    let y = this.state.y;
+    let u = vx;
+    let v = vy;
+    let dotIdx = 0;
+    let onTarget = false;
+
+    for (let step = 0; step < 300; step++) {
+      if (v > 0 && y > this.layoutMetrics.rimY - 54 && y < this.layoutMetrics.rimY + 6) {
+        const dx = this.layoutMetrics.centerX - x;
+        if (Math.abs(dx) < 60) u += dx * 5 * this.PHYSICS.DT;
+      }
+
+      v += this.PHYSICS.G * this.PHYSICS.DT;
+      const prevY = y;
+      x += u * this.PHYSICS.DT;
+      y += v * this.PHYSICS.DT;
+
+      if (prevY < this.layoutMetrics.rimY && y >= this.layoutMetrics.rimY && Math.abs(x - this.layoutMetrics.centerX) <= 35) {
+        onTarget = true;
+      }
+
+      if (step % 5 === 4 && dotIdx < this.dots.length) {
+        const dot = this.dots[dotIdx];
+        dot.hidden = false;
+        dot.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+        dot.style.opacity = (0.95 - dotIdx * 0.03).toFixed(2);
+        dotIdx++;
+      }
+
+      if (v > 0 && y > this.layoutMetrics.rimY + 50) break;
+      if (x < 0 || x > this.layoutMetrics.worldW) break;
+    }
+
+    for (let i = dotIdx; i < this.dots.length; i++) this.dots[i].hidden = true;
+
+    // Renderiza linha e flecha de mira
+    const ux = vx / speed;
+    const uy = vy / speed;
+    const pullRatio = speed / this.PHYSICS.K;
+    const x0 = this.state.x + ux * 44;
+    const y0 = this.state.y + uy * 44;
+    const arrowLen = 46 + pullRatio * 0.9;
+    const x1 = x0 + ux * arrowLen;
+    const y1 = y0 + uy * arrowLen;
+    const bx = x1 - ux * 20;
+    const by = y1 - uy * 20;
+    const qx = -uy * 11;
+    const qy = ux * 11;
+
+    this.dom.aimBand.setAttribute('x1', this.layoutMetrics.homePos.x);
+    this.dom.aimBand.setAttribute('y1', this.layoutMetrics.homePos.y);
+    this.dom.aimBand.setAttribute('x2', this.state.x.toFixed(1));
+    this.dom.aimBand.setAttribute('y2', this.state.y.toFixed(1));
+
+    this.dom.aimLine.setAttribute('x1', x0.toFixed(1));
+    this.dom.aimLine.setAttribute('y1', y0.toFixed(1));
+    this.dom.aimLine.setAttribute('x2', bx.toFixed(1));
+    this.dom.aimLine.setAttribute('y2', by.toFixed(1));
+
+    this.dom.aimHead.setAttribute('d', `M${x1.toFixed(1)} ${y1.toFixed(1)} L${(bx + qx).toFixed(1)} ${(by + qy).toFixed(1)} L${(bx - qx).toFixed(1)} ${(by - qy).toFixed(1)} Z`);
+    this.dom.aimSvg.classList.toggle('target-locked', onTarget);
+    this.dom.aimSvg.hidden = false;
+  }
+
+  launch(vx, vy) {
+    this.state.mode = 'flying';
+    this.state.vx = vx;
+    this.state.vy = vy;
+    this.state.time = 0;
+    this.state.scored = false;
+    this.state.onFloor = false;
+    this.state.fading = false;
+    this.state.rotVel = this.reduceMotion ? 0 : (vx >= 0 ? 1 : -1) * (120 + Math.abs(vx) * 0.2);
+
+    this.dom.fileBall.classList.remove('idle', 'enter', 'grabbing');
+    this.dom.fileCaption.style.opacity = '0';
+    this.hideTrajectory();
+    this.setStatus('');
+  }
+
+  triggerAutoShot() {
+    if (this.state.mode !== 'idle') return;
+    const apex = this.layoutMetrics.rimY - 62;
+    const vy = -Math.sqrt(2 * this.PHYSICS.G * (this.state.y - apex));
+    const T = -vy / this.PHYSICS.G + Math.sqrt(2 * (this.layoutMetrics.rimY - apex) / this.PHYSICS.G);
+    const vx = (this.layoutMetrics.centerX - this.state.x) / T;
+    this.launch(vx, vy);
+  }
+
+  onScore() {
+    this.state.scored = true;
+    this.state.vx *= 0.2;
+    this.state.vy = Math.max(this.state.vy * 0.55, 120);
+    this.dom.fileBall.style.zIndex = '2';
+    this.dom.dropZone.classList.add('hot');
+
+    // Animações de Sucesso
+    this.dom.net.classList.remove('swish');
+    void this.dom.net.getBoundingClientRect();
+    this.dom.net.classList.add('swish');
+
+    this.dom.scorePop.classList.remove('active');
+    void this.dom.scorePop.offsetWidth;
+    this.dom.scorePop.classList.add('active');
+
+    const file = this.popQueue();
+    this.executeFileUpload(file);
+    this.setStatus(`Arremesso perfeito! ${file.name} está sendo enviado.`);
+  }
+
+  executeFileUpload(file) {
+    this.uploadedTotal++;
+    this.dom.uploadedCount.textContent = this.uploadedTotal;
+    
+    this.dom.uploadBadge.classList.remove('bump');
+    void this.dom.uploadBadge.offsetWidth;
+    this.dom.uploadBadge.classList.add('bump');
+
+    const li = document.createElement('li');
+    li.className = 'upload-item';
+    li.innerHTML = `
+      <div class="file-icon">${this.getFileIconSvg(this.getFileExtension(file.name))}</div>
+      <div class="file-info">
+        <span class="file-name">${file.name}</span>
+        <span class="file-size">${this.formatSize(file.size)}</span>
+      </div>
+      <div class="progress-container">
+        <span class="progress-text">Enviando… 0%</span>
+        <div class="progress-bar"><i class="progress-fill"></i></div>
+      </div>
+      <div class="status-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12.5l4.5 4.5L19 7.5"/>
+        </svg>
+      </div>
+    `;
+
+    this.dom.uploadList.prepend(li);
+    while (this.dom.uploadList.children.length > this.config.maxHistoryItems) {
+      this.dom.uploadList.removeChild(this.dom.uploadList.lastChild);
+    }
+
+    const fill = li.querySelector('.progress-fill');
+    const statusTxt = li.querySelector('.progress-text');
+
+    if (this.config.uploadEndpoint && file.rawFile) {
+      // Envio Real via Fetch/XHR
+      const formData = new FormData();
+      formData.append('file', file.rawFile);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', this.config.uploadEndpoint, true);
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          fill.style.transform = `scaleX(${percent / 100})`;
+          statusTxt.textContent = `Enviando… ${percent}%`;
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          fill.style.transform = 'scaleX(1)';
+          statusTxt.textContent = 'Concluído';
+          li.classList.add('completed');
+        } else {
+          statusTxt.textContent = 'Erro no envio';
+        }
+      };
+
+      xhr.send(formData);
+    } else {
+      // Envio Simulado Interativo
+      const duration = this.config.simulatedUploadDelay + Math.random() * 800;
+      const startTime = performance.now();
+
+      const animateProgress = (now) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(1, elapsed / duration);
+        const easeProgress = 1 - Math.pow(1 - progress, 2);
+
+        fill.style.transform = `scaleX(${easeProgress})`;
+        statusTxt.textContent = progress < 1 ? `Enviando… ${Math.round(easeProgress * 100)}%` : 'Concluído';
+
+        if (progress < 1) {
+          requestAnimationFrame(animateProgress);
+        } else {
+          li.classList.add('completed');
+        }
+      };
+      requestAnimationFrame(animateProgress);
+    }
+  }
+
+  onMiss() {
+    this.dom.dropZone.classList.remove('hot');
+    this.state.mode = 'returning';
+    this.state.returnTime = 0;
+    this.state.fromX = this.state.x;
+    this.state.fromY = this.state.y;
+    this.state.fromRot = ((this.state.rot % 360) + 540) % 360 - 180;
+    this.setStatus('Bateu no aro! Puxe novamente e tente o próximo arremesso.');
+  }
+
+  resetToHome(withEnterAnimation = true) {
+    this.state.mode = 'idle';
+    this.state.x = this.layoutMetrics.homePos.x;
+    this.state.y = this.layoutMetrics.homePos.y;
+    this.state.vx = 0;
+    this.state.vy = 0;
+    this.state.rot = 0;
+    this.state.rotVel = 0;
+    this.state.scored = false;
+
+    this.dom.fileBall.style.zIndex = '';
+    this.dom.fileBall.classList.remove('hidden-file', 'grabbing');
+    this.dom.fileBall.classList.add('idle');
+    if (withEnterAnimation) this.dom.fileBall.classList.add('enter');
+
+    this.updateActiveLabel();
+    this.dom.fileCaption.style.opacity = '1';
+    this.renderState();
+  }
+
+  processExternalFiles(files) {
+    files.forEach(f => {
+      this.queue.push({ name: f.name, size: f.size, rawFile: f });
+    });
+
+    if (this.state.mode === 'idle') this.updateActiveLabel();
+
+    const msg = files.length === 1 
+      ? `Arquivo ${files[0].name} pronto para o arremesso!`
+      : `${files.length} arquivos carregados na fila.`;
+    this.setStatus(msg);
+  }
+
+  handleFileSelect() {
+    const files = Array.from(this.dom.fileInput.files || []);
+    if (files.length) this.processExternalFiles(files);
+    this.dom.fileInput.value = '';
+  }
+
+  handleCollisions() {
+    const hitCircle = (px, py, r) => {
+      const dx = this.state.x - px;
+      const dy = this.state.y - py;
+      const dist = Math.hypot(dx, dy);
+      const minDist = this.PHYSICS.RADIUS + r;
+
+      if (dist < minDist && dist > 0.001) {
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const overlap = minDist - dist;
+
+        this.state.x += nx * overlap;
+        this.state.y += ny * overlap;
+
+        const normalVel = this.state.vx * nx + this.state.vy * ny;
+        if (normalVel < 0) {
+          this.state.vx -= 1.55 * normalVel * nx;
+          this.state.vy -= 1.55 * normalVel * ny;
+          this.state.rotVel *= -0.6;
+        }
+      }
+    };
+
+    hitCircle(this.layoutMetrics.rimLeft, this.layoutMetrics.rimY, 4);
+    hitCircle(this.layoutMetrics.rimRight, this.layoutMetrics.rimY, 4);
+  }
+
+  updatePhysics(dt) {
+    if (this.state.mode === 'flying') {
+      this.state.time += dt;
+
+      if (!this.state.scored) {
+        // Atração suave para o centro da cesta se estiver caindo perto
+        if (this.state.vy > 0 && this.state.y > this.layoutMetrics.rimY - 54 && this.state.y < this.layoutMetrics.rimY + 6) {
+          const dx = this.layoutMetrics.centerX - this.state.x;
+          if (Math.abs(dx) < 60) this.state.vx += dx * 5 * dt;
+        }
+
+        this.state.vy += this.PHYSICS.G * dt;
+        const prevY = this.state.y;
+
+        this.state.x += this.state.vx * dt;
+        this.state.y += this.state.vy * dt;
+        this.state.rot += this.state.rotVel * dt;
+
+        this.handleCollisions();
+
+        // Checagem de Cesta
+        if (prevY < this.layoutMetrics.rimY && this.state.y >= this.layoutMetrics.rimY && this.state.vy > 0 && Math.abs(this.state.x - this.layoutMetrics.centerX) <= 46) {
+          this.onScore();
+        }
+
+        if (!this.state.scored) {
+          // Colisão com as bordas laterais
+          if (this.state.x < this.PHYSICS.RADIUS + 6) {
+            this.state.x = this.PHYSICS.RADIUS + 6;
+            this.state.vx = Math.abs(this.state.vx) * 0.5;
+          }
+          if (this.state.x > this.layoutMetrics.worldW - this.PHYSICS.RADIUS - 6) {
+            this.state.x = this.layoutMetrics.worldW - this.PHYSICS.RADIUS - 6;
+            this.state.vx = -Math.abs(this.state.vx) * 0.5;
+          }
+
+          // Colisão com o Chão
+          if (this.state.y > this.layoutMetrics.floorY) {
+            this.state.y = this.layoutMetrics.floorY;
+            this.state.vy = -this.state.vy * 0.45;
+            this.state.vx *= 0.78;
+            this.state.rotVel *= 0.7;
+
+            if (Math.abs(this.state.vy) < 90) {
+              this.state.vy = 0;
+              this.state.onFloor = true;
+            }
+          }
+
+          if (this.state.onFloor) this.state.vx *= 0.97;
+
+          if ((this.state.onFloor && this.state.time > 0.4) || this.state.time > 3.5) {
+            this.onMiss();
+          }
+        }
+      } else {
+        // Animação pós-pontuação caindo pela rede
+        this.state.vy = Math.min(this.state.vy + 700 * dt, 260);
+        this.state.vx = 0;
+        this.state.x += (this.layoutMetrics.centerX - this.state.x) * Math.min(1, 5 * dt);
+        this.state.y += this.state.vy * dt;
+        this.state.rot += (0 - this.state.rot) * Math.min(1, 4 * dt);
+
+        if (this.state.y >= this.layoutMetrics.restY) {
+          this.state.y = this.layoutMetrics.restY;
+          this.state.vy = 0;
+
+          if (!this.state.fading) {
+            this.state.fading = true;
+            setTimeout(() => {
+              this.dom.fileBall.classList.add('hidden-file');
+              setTimeout(() => {
+                this.dom.dropZone.classList.remove('hot');
+                this.resetToHome(true);
+              }, 340);
+            }, 650);
+          }
+        }
+      }
+
+      this.renderState();
+    } else if (this.state.mode === 'returning') {
+      this.state.returnTime += dt / 0.5;
+      const progress = Math.min(1, this.state.returnTime);
+      const ease = 1 - Math.pow(1 - progress, 3);
+
+      this.state.x = this.state.fromX + (this.layoutMetrics.homePos.x - this.state.fromX) * ease;
+      this.state.y = this.state.fromY + (this.layoutMetrics.homePos.y - this.state.fromY) * ease;
+      this.state.rot = this.state.fromRot * (1 - ease);
+
+      this.renderState();
+
+      if (progress >= 1) this.resetToHome(false);
+    }
+  }
+
+  renderState() {
+    this.dom.fileBall.style.transform = `translate(${this.state.x}px, ${this.state.y}px) rotate(${this.state.rot}deg)`;
+  }
+
+  loop(timestamp) {
+    const dt = Math.min(0.033, (timestamp - this.lastTimestamp) / 1000 || 0.016);
+    this.lastTimestamp = timestamp;
+
+    this.updatePhysics(dt);
+    requestAnimationFrame(this.loop.bind(this));
+  }
+}
+
+// Inicialização do Componente
+document.addEventListener('DOMContentLoaded', () => {
+  window.uploaderApp = new BasketballUploader({
+    simulatedUploadDelay: 1800,
+    maxHistoryItems: 3
+  });
+});
+</script>
+
+</body>
+</html>
