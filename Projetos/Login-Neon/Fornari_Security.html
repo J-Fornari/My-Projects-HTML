@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fornari Security — Autenticação</title>
+  
+  <!-- Fontes Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ==========================================================================
+       1. VARIABLES & DESIGN TOKENS (Identidade Própria "Nexus")
+       ========================================================================== */
+    :root {
+      /* Paleta de Cores Cyberpunk/Glass */
+      --cyan-neon:      #00f3ff;
+      --magenta-neon:   #ff007f;
+      --violet-neon:    #9d4edd;
+      --bg-dark:        #080b10;
+      --card-bg:        rgba(15, 20, 28, 0.85);
+      --input-bg:       rgba(255, 255, 255, 0.05);
+      --text-main:      #f0f4f8;
+      --text-muted:     #8a99ad;
+
+      /* Dimensões Adaptativas */
+      --card-w-closed:  380px;
+      --card-h-closed:  180px;
+      --card-w-open:    440px;
+      --card-h-open:    520px;
+
+      /* Tempos de Animação e Curvas Bézier */
+      --transition-smooth: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      --spin-duration:    6s;
+    }
+
+    /* CSS Custom Property para rotação contínua e suave */
+    @property --angle {
+      syntax: "<angle>";
+      inherits: false;
+      initial-value: 0deg;
+    }
+
+    @keyframes spinBorder {
+      0%   { --angle: 0deg; }
+      100% { --angle: 360deg; }
+    }
+
+    /* ==========================================================================
+       2. RESET & LAYOUT BASE
+       ========================================================================== */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 50% 20%, rgba(0, 243, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(157, 78, 221, 0.08) 0%, transparent 50%);
+      overflow-x: hidden;
+      padding: 1.5rem;
+      color: var(--text-main);
+    }
+
+    /* ACCESSIBILITY: Indicador global de foco via teclado */
+    :focus-visible {
+      outline: 2px solid var(--cyan-neon);
+      outline-offset: 4px;
+    }
+
+    /* ==========================================================================
+       3. ANIMAÇÃO DE BORDA E CARD INTERATIVO
+       ========================================================================== */
+    .card-wrapper {
+      position: relative;
+      width: var(--card-w-closed);
+      height: var(--card-h-closed);
+      border-radius: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: width var(--transition-smooth), height var(--transition-smooth), transform var(--transition-smooth);
+      cursor: pointer;
+    }
+
+    /* Camada Externa de Brilho Cônico (Aura Glow) */
+    .card-wrapper::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border-radius: 26px;
+      background: conic-gradient(
+        from var(--angle),
+        var(--cyan-neon),
+        var(--violet-neon),
+        var(--magenta-neon),
+        var(--cyan-neon)
+      );
+      animation: spinBorder var(--spin-duration) linear infinite;
+      filter: blur(16px);
+      opacity: 0.6;
+      transition: opacity var(--transition-smooth);
+    }
+
+    /* Borda Nítida Interna */
+    .card-wrapper::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      background: conic-gradient(
+        from var(--angle),
+        var(--cyan-neon),
+        var(--violet-neon),
+        var(--magenta-neon),
+        var(--cyan-neon)
+      );
+      animation: spinBorder var(--spin-duration) linear infinite;
+    }
+
+    /* Expansão do Card: Hover, Foco Interno ou Classe Ativa */
+    .card-wrapper:hover,
+    .card-wrapper:focus-within,
+    .card-wrapper.is-open {
+      width: var(--card-w-open);
+      height: var(--card-h-open);
+      cursor: default;
+    }
+
+    .card-wrapper:hover::before,
+    .card-wrapper:focus-within::before,
+    .card-wrapper.is-open::before {
+      opacity: 0.9;
+    }
+
+    /* ==========================================================================
+       4. CONTEÚDO PAINEL GLASSMORPHISM
+       ========================================================================== */
+    .card-inner {
+      position: absolute;
+      inset: 3px; /* Espessura da borda animada */
+      background: var(--card-bg);
+      border-radius: 21px;
+      z-index: 2;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      overflow: hidden;
+      padding: 2.25rem 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* Estado Inicial do Formulário (Oculto/Deslocado) */
+    .form-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      opacity: 0;
+      transform: translateY(30px) scale(0.95);
+      transition: opacity var(--transition-smooth), transform var(--transition-smooth);
+      pointer-events: none;
+    }
+
+    /* Estado Revelado do Formulário */
+    .card-wrapper:hover .form-content,
+    .card-wrapper:focus-within .form-content,
+    .card-wrapper.is-open .form-content {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: all;
+    }
+
+    /* Cabeçalho Teaser (Visível quando o card está fechado) */
+    .teaser-header {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      color: var(--text-main);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-size: 0.95rem;
+      transition: opacity var(--transition-smooth), transform var(--transition-smooth);
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .teaser-icon {
+      width: 22px;
+      height: 22px;
+      fill: var(--cyan-neon);
+      filter: drop-shadow(0 0 8px var(--cyan-neon));
+    }
+
+    .card-wrapper:hover .teaser-header,
+    .card-wrapper:focus-within .teaser-header,
+    .card-wrapper.is-open .teaser-header {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+
+    /* ==========================================================================
+       5. COMPONENTES DO FORMULÁRIO & FLOATING LABELS
+       ========================================================================== */
+    .brand-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand-title span {
+      background: linear-gradient(135deg, var(--cyan-neon), var(--violet-neon));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-subtitle {
+      font-size: 0.825rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    /* Grupo de Input com Label Flutuante */
+    .input-group {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 0.9rem 1rem;
+      background: var(--input-bg);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
+    }
+
+    .input-field:focus {
+      border-color: var(--cyan-neon);
+      background: rgba(0, 243, 255, 0.03);
+      box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
+    }
+
+    /* Label Animado */
+    .input-label {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Animação do Label quando preenchido ou focado */
+    .input-field:focus ~ .input-label,
+    .input-field:not(:placeholder-shown) ~ .input-label {
+      top: 0;
+      transform: translateY(-50%) scale(0.85);
+      left: 0.75rem;
+      padding: 0 0.3rem;
+      background: var(--bg-dark);
+      border-radius: 4px;
+      color: var(--cyan-neon);
+    }
+
+    /* Toggle Mostrar Senha */
+    .btn-toggle-pw {
+      position: absolute;
+      right: 0.8rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.25rem;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s;
+    }
+
+    .btn-toggle-pw:hover {
+      color: var(--text-main);
+    }
+
+    /* Links de Ação */
+    .form-options {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+
+    .link-action {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .link-action:hover {
+      color: var(--cyan-neon);
+    }
+
+    .link-accent {
+      color: var(--magenta-neon);
+      font-weight: 600;
+    }
+
+    /* ==========================================================================
+       6. BOTÃO DE SUBMIT & SPINNER (Micro-interação)
+       ========================================================================== */
+    .btn-submit {
+      position: relative;
+      width: 100%;
+      padding: 0.85rem;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--cyan-neon), #00a8ff);
+      color: #04080e;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.3s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 243, 255, 0.35);
+    }
+
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+
+    /* Estado de Loading no Botão */
+    .btn-submit.is-loading .btn-text {
+      visibility: hidden;
+      opacity: 0;
+    }
+
+    .btn-submit.is-loading::after {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(4, 8, 14, 0.25);
+      border-top-color: #04080e;
+      border-radius: 50%;
+      animation: spinSpinner 0.8s linear infinite;
+    }
+
+    @keyframes spinSpinner {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ACCESSIBILITY: Redução de movimento para usuários sensíveis */
+    @media (prefers-reduced-motion: reduce) {
+      .card-wrapper,
+      .card-wrapper::before,
+      .card-wrapper::after,
+      .form-content {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- CARD PRINCIPAL -->
+  <main class="card-wrapper" id="loginCard" tabindex="0" role="region" aria-label="Painel de Autenticação Nexus">
+    
+    <!-- Teaser Visível antes da Expansão -->
+    <div class="teaser-header" id="teaserHeader">
+      <svg class="teaser-icon" viewBox="0 0 24 24">
+        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8s0 0 0 0z"/>
+      </svg>
+      <span>Acessar Login</span>
+    </div>
+
+    <div class="card-inner">
+      <!-- FORMULÁRIO INTERATIVO -->
+      <form class="form-content" id="loginForm" autocomplete="on">
+        
+        <header>
+          <h1 class="brand-title">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan-neon);">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>Fornari Security</span>
+          </h1>
+          <p class="brand-subtitle">Insira suas credenciais para autenticar o acesso.</p>
+        </header>
+
+        <!-- Campo Usuário -->
+        <div class="input-group">
+          <input 
+            type="text" 
+            id="username" 
+            class="input-field" 
+            placeholder=" " 
+            required 
+            autocomplete="username" 
+          />
+          <label for="username" class="input-label">Identificador ou E-mail</label>
+        </div>
+
+        <!-- Campo Senha -->
+        <div class="input-group">
+          <input 
+            type="password" 
+            id="password" 
+            class="input-field" 
+            placeholder=" " 
+            required 
+            autocomplete="current-password" 
+          />
+          <label for="password" class="input-label">Chave de Acesso</label>
+          <button type="button" class="btn-toggle-pw" id="togglePassword" aria-label="Alternar exibição da senha">
+            <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Links Auxiliares -->
+        <div class="form-options">
+          <a href="#" class="link-action">Esqueceu a chave?</a>
+          <a href="#" class="link-action link-accent">Criar conta</a>
+        </div>
+
+        <!-- Botão com Estado de Carregamento -->
+        <button type="submit" class="btn-submit" id="btnSubmit">
+          <span class="btn-text">Iniciar Sessão</span>
+        </button>
+
+      </form>
+    </div>
+  </main>
+
+  <script>
+    /**
+     * SYSTEM-DESIGN & MICRO-INTERACTIONS
+     * Controle de estado da interface e eventos de interação do usuário.
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+      const card = document.getElementById('loginCard');
+      const form = document.getElementById('loginForm');
+      const togglePwBtn = document.getElementById('togglePassword');
+      const passwordInput = document.getElementById('password');
+      const btnSubmit = document.getElementById('btnSubmit');
+
+      // 1. Suporte para ativação via toque / clique em dispositivos móveis
+      card.addEventListener('click', (e) => {
+        if (!card.classList.contains('is-open')) {
+          card.classList.add('is-open');
+        }
+      });
+
+      // Fecha o card ao clicar fora dele
+      document.addEventListener('click', (e) => {
+        if (!card.contains(e.target)) {
+          card.classList.remove('is-open');
+        }
+      });
+
+      // 2. Alternar visibilidade da senha (Micro-interação)
+      togglePwBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isPassword = passwordInput.type === 'password';
+        passwordInput.type = isPassword ? 'text' : 'password';
+        
+        togglePwBtn.style.color = isPassword ? 'var(--cyan-neon)' : 'var(--text-muted)';
+      });
+
+      // 3. Simulação de envio com feedback visual (Loading Spinner)
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        btnSubmit.classList.add('is-loading');
+        btnSubmit.disabled = true;
+
+        setTimeout(() => {
+          btnSubmit.classList.remove('is-loading');
+          btnSubmit.disabled = false;
+          alert('Autenticação realizada com sucesso no Fornari Security!');
+        }, 2000);
+      });
+    });
+  </script>
+</body>
+</html>
