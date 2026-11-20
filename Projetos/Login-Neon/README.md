@@ -1,4 +1,4 @@
-# Nexus Protocol — Acesso Seguro com Borda Cônica Animada
+# Fornari Security — Acesso Seguro com Borda Animada
 
 Interface de autenticação moderna e responsiva construída com HTML5 semântico, CSS3 e JavaScript Vanilla. Apresenta uma animação contínua de borda neon cônica, micro-interações para os campos e suporte completo a acessibilidade.
 
@@ -15,5 +15,5 @@ Interface de autenticação moderna e responsiva construída com HTML5 semântic
 
 ## 🛠️ Como Utilizar
 
-1. Salve o código no arquivo `index.html`.
+1. Salve o código no arquivo `Fornari_Security.html`.
 2. Abra-o em qualquer navegador moderno (Chrome, Edge, Firefox, Safari). Nenhuma dependência externa ou instalador de pacotes é necessário.
