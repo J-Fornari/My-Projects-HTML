@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Formulário de cartão de crédito interativo e acessível com temas dos principais bancos brasileiros (Nubank, Santander, Banco do Brasil e Caixa).">
+  <title>Pagamento Seguro - Cartão de Crédito</title>
+  
+  <!-- Tipografia de Alta Definição -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       1. FRONTEND-DESIGN & SYSTEM-DESIGN: Design Tokens & Temas Bancários
+       ========================================================================== */
+    @property --glow-angle {
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
+    }
+
+    :root {
+      /* Palette Base Dark */
+      --bg-dark: #090c10;
+      --bg-card: rgba(22, 27, 34, 0.75);
+      --border-card: rgba(255, 255, 255, 0.12);
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+      --text-subtle: #484f58;
+
+      /* Estado Padrão (Nubank) */
+      --bank-gradient-1: #820ad1;
+      --bank-gradient-2: #4d0080;
+      --bank-accent: #a855f7;
+      --bank-glow: rgba(130, 10, 209, 0.45);
+      --bank-text-brand: #ffffff;
+      --bank-logo-fill: #ffffff;
+
+      /* Visual System */
+      --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'Space Mono', monospace;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      
+      /* Animações & Transições */
+      --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-out-quad: cubic-bezier(0.25, 1, 0.5, 1);
+      --transition-fast: 150ms var(--ease-out-quad);
+      --transition-normal: 300ms var(--ease-out-quad);
+    }
+
+    /* Temas Específicos dos Bancos Brasileiros */
+    [data-bank="nubank"] {
+      --bank-gradient-1: #820ad1;
+      --bank-gradient-2: #49047a;
+      --bank-accent: #ab47bc;
+      --bank-glow: rgba(130, 10, 209, 0.5);
+      --bank-text-brand: #ffffff;
+      --bank-logo-fill: #ffffff;
+    }
+
+    [data-bank="santander"] {
+      --bank-gradient-1: #ec0000;
+      --bank-gradient-2: #800000;
+      --bank-accent: #ff5252;
+      --bank-glow: rgba(236, 0, 0, 0.5);
+      --bank-text-brand: #ffffff;
+      --bank-logo-fill: #ffffff;
+    }
+
+    [data-bank="bb"] {
+      --bank-gradient-1: #0038a8;
+      --bank-gradient-2: #001f66;
+      --bank-accent: #ffcc00;
+      --bank-glow: rgba(0, 56, 168, 0.5);
+      --bank-text-brand: #ffcc00;
+      --bank-logo-fill: #ffcc00;
+    }
+
+    [data-bank="caixa"] {
+      --bank-gradient-1: #005ca9;
+      --bank-gradient-2: #002b54;
+      --bank-accent: #f37021;
+      --bank-glow: rgba(0, 92, 169, 0.5);
+      --bank-text-brand: #ffffff;
+      --bank-logo-fill: #f37021;
+    }
+
+    /* Reset Semântico & Base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      padding: 1.5rem;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ACCESSIBILITY-REVIEW: Indicador de Foco Visível para WCAG 2.1 AA */
+    :focus-visible {
+      outline: 2px solid var(--bank-accent);
+      outline-offset: 3px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* Elementos Orçamentais de Fundo (Blobs Fluídos) */
+    .bg-blobs {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.22;
+      transition: background-color 600ms ease;
+      will-change: transform;
+    }
+
+    .blob-1 {
+      width: 480px;
+      height: 480px;
+      background: var(--bank-gradient-1);
+      top: -120px;
+      left: -100px;
+      animation: floatDrift 14s ease-in-out infinite alternate;
+    }
+
+    .blob-2 {
+      width: 400px;
+      height: 400px;
+      background: var(--bank-gradient-2);
+      bottom: -100px;
+      right: -80px;
+      animation: floatDrift 16s ease-in-out infinite alternate-reverse;
+    }
+
+    @keyframes floatDrift {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(40px, -30px) scale(1.12); }
+    }
+
+    /* Layout Wrapper Main */
+    .app-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 460px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* ==========================================================================
+       2. FRONTEND-DESIGN & UI-ANIMATION: Seletor de Bancos & Cena do Cartão 3D
+       ========================================================================== */
+    /* Seletor de Emissor */
+    .bank-selector-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .selector-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .bank-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-card);
+    }
+
+    .bank-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.5rem 0.25rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      transition: color var(--transition-fast), background-color var(--transition-fast), transform 100ms ease;
+    }
+
+    .bank-tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .bank-tab-btn.active {
+      background: var(--bank-gradient-1);
+      color: #ffffff;
+      box-shadow: 0 4px 12px var(--bank-glow);
+    }
+
+    .bank-tab-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Cena 3D do Cartão */
+    .card-scene {
+      width: 100%;
+      height: 230px;
+      perspective: 1000px;
+    }
+
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 700ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-inner.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius-xl);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 20px var(--bank-glow);
+      transition: box-shadow 600ms ease, border-color 600ms ease;
+    }
+
+    .card-front {
+      background: linear-gradient(135deg, var(--bank-gradient-1) 0%, var(--bank-gradient-2) 100%);
+      padding: 1.5rem 1.75rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: background 600ms ease;
+    }
+
+    /* Aurora Glow & Efeito Reflexo Glass */
+    .card-front::before {
+      content: '';
+      position: absolute;
+      width: 200%;
+      height: 200%;
+      top: -50%;
+      left: -50%;
+      background: conic-gradient(from var(--glow-angle) at 50% 50%, transparent 0deg, var(--bank-accent) 60deg, transparent 180deg);
+      opacity: 0.25;
+      animation: rotateGlow 10s linear infinite;
+    }
+
+    @keyframes rotateGlow {
+      to { --glow-angle: 360deg; }
+    }
+
+    .card-front::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(125deg, rgba(255, 255, 255, 0.2) 0%, transparent 40%, rgba(255, 255, 255, 0.05) 100%);
+      pointer-events: none;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .brand-logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .bank-logo-svg {
+      height: 24px;
+      width: auto;
+      fill: var(--bank-logo-fill);
+      transition: fill 400ms ease;
+    }
+
+    .bank-name-text {
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--bank-text-brand);
+      transition: color 400ms ease;
+    }
+
+    /* Chip EMV NATIVO */
+    .emv-chip {
+      width: 42px;
+      height: 32px;
+      background: linear-gradient(135deg, #e6c666 0%, #d4af37 50%, #997a15 100%);
+      border-radius: 6px;
+      position: relative;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4), 0 2px 4px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .emv-chip::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: rgba(0, 0, 0, 0.35);
+      transform: translateY(-50%);
+    }
+
+    .emv-chip::after {
+      content: '';
+      position: absolute;
+      left: 33%;
+      top: 0;
+      bottom: 0;
+      width: 34%;
+      border-left: 1px solid rgba(0,0,0,0.35);
+      border-right: 1px solid rgba(0,0,0,0.35);
+    }
+
+    /* Display do Número do Cartão */
+    .card-number-display {
+      font-family: var(--font-mono);
+      font-size: 1.15rem;
+      letter-spacing: 0.12em;
+      color: #ffffff;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+      position: relative;
+      z-index: 2;
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card-field-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-label-subtle {
+      font-size: 0.625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    .card-value-mono {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    /* Verso do Cartão (BACK) */
+    .card-back {
+      background: linear-gradient(135deg, var(--bank-gradient-1) 0%, var(--bank-gradient-2) 100%);
+      transform: rotateY(180deg);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding-block: 1.5rem;
+      transition: background 600ms ease;
+    }
+
+    .magnetic-stripe {
+      width: 100%;
+      height: 48px;
+      background: linear-gradient(180deg, #111115 0%, #222228 50%, #09090b 100%);
+      margin-top: 0.5rem;
+    }
+
+    .cvv-box-container {
+      padding-x: 1.75rem;
+      padding: 0 1.75rem;
+    }
+
+    .cvv-signature-strip {
+      background: rgba(255, 255, 255, 0.9);
+      height: 38px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 1rem;
+    }
+
+    .cvv-value-display {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 1rem;
+      color: #111827;
+      letter-spacing: 0.2em;
+    }
+
+    /* ==========================================================================
+       3. MICRO-INTERACTIONS & UX-COPY: Formulário de Cartão & Validações
+       ========================================================================== */
+    .form-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-xl);
+      padding: 1.75rem;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .input-field {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      font-family: inherit;
+      outline: none;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+    }
+
+    .input-field::placeholder {
+      color: var(--text-subtle);
+    }
+
+    .input-field:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .input-field:focus {
+      border-color: var(--bank-accent);
+      background: rgba(0, 0, 0, 0.4);
+      box-shadow: 0 0 0 3px var(--bank-glow);
+    }
+
+    .input-field.error {
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
+    }
+
+    .form-row-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .field-error-msg {
+      font-size: 0.75rem;
+      color: #ef4444;
+      font-weight: 500;
+      min-height: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    /* Botão de Ação Primário com Spinner Integrado */
+    .btn-submit {
+      position: relative;
+      width: 100%;
+      background: linear-gradient(135deg, var(--bank-gradient-1) 0%, var(--bank-gradient-2) 100%);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 0.875rem 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #ffffff;
+      font-family: inherit;
+      cursor: pointer;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 8px 20px var(--bank-glow);
+      transition: transform 100ms ease, box-shadow var(--transition-fast), opacity var(--transition-fast);
+      margin-top: 0.5rem;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 25px var(--bank-glow);
+    }
+
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    /* Micro-interação Spinner de Carregamento */
+    .btn-spinner {
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 600ms linear infinite;
+      display: none;
+    }
+
+    .btn-submit.loading .btn-text {
+      visibility: hidden;
+      opacity: 0;
+    }
+
+    .btn-submit.loading .btn-spinner {
+      display: block;
+      position: absolute;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ACCESSIBILITY-REVIEW: Suporte para preferências de movimento reduzido */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .card-inner {
+        transition: none !important;
+      }
+    }
+
+    /* Classes Utilitárias Leitores de Tela */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Elementos de Fundo com Transição Dinâmica -->
+  <div class="bg-blobs" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+  </div>
+
+  <main class="app-container" data-bank="nubank" id="appRoot">
+    
+    <!-- Seletor de Banco Emissor -->
+    <section class="bank-selector-group" aria-label="Seleção de Banco Emissor">
+      <span class="selector-label" id="bankSelectorLabel">Selecione o Banco</span>
+      <div class="bank-tabs" role="tablist" aria-labelledby="bankSelectorLabel">
+        <button type="button" class="bank-tab-btn active" role="tab" aria-selected="true" data-bank-target="nubank" id="tab-nubank">
+          Nubank
+        </button>
+        <button type="button" class="bank-tab-btn" role="tab" aria-selected="false" data-bank-target="santander" id="tab-santander">
+          Santander
+        </button>
+        <button type="button" class="bank-tab-btn" role="tab" aria-selected="false" data-bank-target="bb" id="tab-bb">
+          BB
+        </button>
+        <button type="button" class="bank-tab-btn" role="tab" aria-selected="false" data-bank-target="caixa" id="tab-caixa">
+          Caixa
+        </button>
+      </div>
+    </section>
+
+    <!-- Visualização 3D do Cartão de Crédito -->
+    <section class="card-scene" aria-label="Visualização do Cartão de Crédito">
+      <div class="card-inner" id="cardInner">
+        
+        <!-- FRENTE DO CARTÃO -->
+        <div class="card-front" id="cardFront">
+          <div class="card-header">
+            <div class="brand-logo-wrap">
+              <!-- Renderização Dinâmica do Logo SVG do Banco -->
+              <span id="bankLogoContainer">
+                <svg class="bank-logo-svg" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 4h4v16H4V4zm6 0h4v16h-4V4zm6 0h4v16h-4V4z"/>
+                </svg>
+              </span>
+              <span class="bank-name-text" id="bankBrandTitle">nubank</span>
+            </div>
+            <div class="emv-chip" aria-hidden="true"></div>
+          </div>
+
+          <div class="card-number-display" id="cardNumberDisplay" aria-label="Número do cartão">
+            <span>••••</span>
+            <span>••••</span>
+            <span>••••</span>
+            <span>••••</span>
+          </div>
+
+          <div class="card-footer">
+            <div class="card-field-group">
+              <span class="card-label-subtle">Titular do Cartão</span>
+              <span class="card-value-mono" id="cardHolderDisplay">JOÃO FORNARI</span>
+            </div>
+            <div class="card-field-group" style="text-align: right;">
+              <span class="card-label-subtle">Validade</span>
+              <span class="card-value-mono" id="cardExpiryDisplay">MM/AA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- VERSO DO CARTÃO -->
+        <div class="card-back" id="cardBack">
+          <div class="magnetic-stripe" aria-hidden="true"></div>
+          <div class="cvv-box-container">
+            <span class="card-label-subtle" style="display:block; text-align:right; margin-bottom:4px;">CÓDIGO CVV</span>
+            <div class="cvv-signature-strip">
+              <span class="cvv-value-display" id="cardCvvDisplay">***</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Formulário Principal de Pagamento -->
+    <form id="paymentForm" class="form-card" novalidate aria-label="Formulário de Dados do Cartão">
+      
+      <!-- Campo Número do Cartão -->
+      <div class="form-group">
+        <label for="cardNumberInput" class="form-label">Número do Cartão</label>
+        <input 
+          type="text" 
+          id="cardNumberInput" 
+          class="input-field" 
+          placeholder="0000 0000 0000 0000" 
+          maxlength="19" 
+          inputmode="numeric" 
+          autocomplete="cc-number" 
+          required 
+          aria-describedby="cardNumberError"
+        >
+        <span id="cardNumberError" class="field-error-msg" role="alert"></span>
+      </div>
+
+      <!-- Campo Nome do Titular -->
+      <div class="form-group">
+        <label for="cardHolderInput" class="form-label">Nome do Titular</label>
+        <input 
+          type="text" 
+          id="cardHolderInput" 
+          class="input-field" 
+          placeholder="Ex: JOÃO FORNARI" 
+          autocomplete="cc-name" 
+          maxlength="26"
+          required 
+          aria-describedby="cardHolderError"
+        >
+        <span id="cardHolderError" class="field-error-msg" role="alert"></span>
+      </div>
+
+      <!-- Validade e CVV -->
+      <div class="form-row-grid">
+        <div class="form-group">
+          <label for="cardExpiryInput" class="form-label">Validade (MM/AA)</label>
+          <input 
+            type="text" 
+            id="cardExpiryInput" 
+            class="input-field" 
+            placeholder="MM/AA" 
+            maxlength="5" 
+            inputmode="numeric" 
+            autocomplete="cc-exp" 
+            required 
+            aria-describedby="cardExpiryError"
+          >
+          <span id="cardExpiryError" class="field-error-msg" role="alert"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="cardCvvInput" class="form-label">CVV</label>
+          <input 
+            type="password" 
+            id="cardCvvInput" 
+            class="input-field" 
+            placeholder="***" 
+            maxlength="4" 
+            inputmode="numeric" 
+            autocomplete="cc-csc" 
+            required 
+            aria-describedby="cardCvvError"
+          >
+          <span id="cardCvvError" class="field-error-msg" role="alert"></span>
+        </div>
+      </div>
+
+      <!-- Região Live ARIA para Leitores de Tela -->
+      <div id="srAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+      <!-- Botão de Finalização -->
+      <button type="submit" id="btnSubmit" class="btn-submit">
+        <span class="btn-text">Confirmar Pagamento</span>
+        <span class="btn-spinner" aria-hidden="true"></span>
+      </button>
+    </form>
+
+  </main>
+
+  <script>
+    /**
+     * ==========================================================================
+     * SYSTEM-DESIGN & ENGINEERING:CODE-REVIEW
+     * Arquitetura Modular em Camadas Isoladas (BankThemes, Validation, CardUI, CardApp)
+     * ==========================================================================
+     */
+    "use strict";
+
+    // Modulo 1: Temas dos Bancos Brasileiros com Logos SVG Vetoriais Nativas
+    const BankThemes = (() => {
+      const themes = {
+        nubank: {
+          name: 'nubank',
+          brandTitle: 'nu',
+          logoSvg: `<svg class="bank-logo-svg" viewBox="0 0 40 24" fill="currentColor"><path d="M10 4C6.686 4 4 6.686 4 10v10h4v-9.5c0-1.933 1.567-3.5 3.5-3.5s3.5 1.567 3.5 3.5V20h4v-9.5C19 6.686 16.314 4 13 4c-1.18 0-2.27.34-3 0.93V4h-4zm16 0c-3.314 0-6 2.686-6 6v10h4v-9.5c0-1.933 1.567-3.5 3.5-3.5s3.5 1.567 3.5 3.5V20h4v-9.5c0-3.814-2.686-6.5-6-6.5z"/></svg>`
+        },
+        santander: {
+          name: 'santander',
+          brandTitle: 'Santander',
+          logoSvg: `<svg class="bank-logo-svg" viewBox="0 0 32 24" fill="currentColor"><path d="M16 2L4 22h24L16 2zm0 5l7.5 12.5h-15L16 7z"/></svg>`
+        },
+        bb: {
+          name: 'bb',
+          brandTitle: 'Banco do Brasil',
+          logoSvg: `<svg class="bank-logo-svg" viewBox="0 0 36 24" fill="currentColor"><path d="M6 4h10v6H6V4zm14 0h10v6H20V4zm-14 10h10v6H6v-6zm14 0h10v6H20v-6z"/></svg>`
+        },
+        caixa: {
+          name: 'caixa',
+          brandTitle: 'CAIXA',
+          logoSvg: `<svg class="bank-logo-svg" viewBox="0 0 36 24" fill="currentColor"><path d="M4 4l8 8-8 8h6l5-5 5 5h6l-8-8 8-8h-6l-5 5-5-5H4z"/></svg>`
+        }
+      };
+
+      return {
+        getTheme: (key) => themes[key] || themes.nubank
+      };
+    })();
+
+    // Modulo 2: Validação & Máscaras (UX-Copy & Security)
+    const Formatters = {
+      formatCardNumber: (value) => {
+        const digits = value.replace(/\D/g, '').slice(0, 16);
+        return digits.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+      },
+      formatExpiry: (value) => {
+        const digits = value.replace(/\D/g, '').slice(0, 4);
+        if (digits.length >= 3) {
+          return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+        }
+        return digits;
+      },
+      formatCvv: (value) => {
+        return value.replace(/\D/g, '').slice(0, 4);
+      },
+      escapeHTML: (str) => {
+        return str.replace(/[&<>'"]/g, 
+          tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+      }
+    };
+
+    // Modulo 3: Camada de Interface & Animações (CardUI)
+    const CardUI = (() => {
+      const DOM = {
+        appRoot: document.getElementById('appRoot'),
+        cardInner: document.getElementById('cardInner'),
+        cardNumberDisplay: document.getElementById('cardNumberDisplay'),
+        cardHolderDisplay: document.getElementById('cardHolderDisplay'),
+        cardExpiryDisplay: document.getElementById('cardExpiryDisplay'),
+        cardCvvDisplay: document.getElementById('cardCvvDisplay'),
+        bankBrandTitle: document.getElementById('bankBrandTitle'),
+        bankLogoContainer: document.getElementById('bankLogoContainer'),
+        tabBtns: document.querySelectorAll('.bank-tab-btn'),
+        form: document.getElementById('paymentForm'),
+        inputNumber: document.getElementById('cardNumberInput'),
+        inputHolder: document.getElementById('cardHolderInput'),
+        inputExpiry: document.getElementById('cardExpiryInput'),
+        inputCvv: document.getElementById('cardCvvInput'),
+        btnSubmit: document.getElementById('btnSubmit'),
+        srAnnouncer: document.getElementById('srAnnouncer'),
+        errors: {
+          number: document.getElementById('cardNumberError'),
+          holder: document.getElementById('cardHolderError'),
+          expiry: document.getElementById('cardExpiryError'),
+          cvv: document.getElementById('cardCvvError')
+        }
+      };
+
+      const announce = (msg) => {
+        DOM.srAnnouncer.textContent = '';
+        requestAnimationFrame(() => {
+          DOM.srAnnouncer.textContent = msg;
+        });
+      };
+
+      const updateCardNumber = (val) => {
+        const digits = val.replace(/\s/g, '');
+        const groups = [
+          digits.slice(0, 4).padEnd(4, '•'),
+          digits.slice(4, 8).padEnd(4, '•'),
+          digits.slice(8, 12).padEnd(4, '•'),
+          digits.slice(12, 16).padEnd(4, '•')
+        ];
+
+        DOM.cardNumberDisplay.innerHTML = groups
+          .map(g => `<span>${Formatters.escapeHTML(g)}</span>`)
+          .join('');
+      };
+
+      const updateCardHolder = (val) => {
+        const name = val.trim() ? val.toUpperCase() : 'JOÃO FORNARI';
+        DOM.cardHolderDisplay.textContent = Formatters.escapeHTML(name);
+      };
+
+      const updateCardExpiry = (val) => {
+        DOM.cardExpiryDisplay.textContent = val || 'MM/AA';
+      };
+
+      const updateCardCvv = (val) => {
+        DOM.cardCvvDisplay.textContent = '•'.repeat(val.length) || '***';
+      };
+
+      const setBankTheme = (bankKey) => {
+        const theme = BankThemes.getTheme(bankKey);
+        DOM.appRoot.setAttribute('data-bank', theme.name);
+        DOM.bankBrandTitle.textContent = theme.brandTitle;
+        DOM.bankLogoContainer.innerHTML = theme.logoSvg;
+
+        DOM.tabBtns.forEach(btn => {
+          const isSelected = btn.dataset.bankTarget === bankKey;
+          btn.classList.toggle('active', isSelected);
+          btn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+        });
+
+        announce(`Tema alterado para o banco ${theme.brandTitle}`);
+      };
+
+      const flipCard = (toBack) => {
+        if (toBack) {
+          DOM.cardInner.classList.add('flipped');
+        } else {
+          DOM.cardInner.classList.remove('flipped');
+        }
+      };
+
+      const showError = (fieldKey, message) => {
+        const inputEl = DOM[`input${fieldKey.charAt(0).toUpperCase() + fieldKey.slice(1)}`];
+        const errorEl = DOM.errors[fieldKey];
+        if (inputEl && errorEl) {
+          inputEl.classList.add('error');
+          errorEl.textContent = message;
+        }
+      };
+
+      const clearError = (fieldKey) => {
+        const inputEl = DOM[`input${fieldKey.charAt(0).toUpperCase() + fieldKey.slice(1)}`];
+        const errorEl = DOM.errors[fieldKey];
+        if (inputEl && errorEl) {
+          inputEl.classList.remove('error');
+          errorEl.textContent = '';
+        }
+      };
+
+      const setLoading = (loading) => {
+        if (loading) {
+          DOM.btnSubmit.classList.add('loading');
+          DOM.btnSubmit.setAttribute('disabled', 'true');
+        } else {
+          DOM.btnSubmit.classList.remove('loading');
+          DOM.btnSubmit.removeAttribute('disabled');
+        }
+      };
+
+      return {
+        DOM,
+        announce,
+        updateCardNumber,
+        updateCardHolder,
+        updateCardExpiry,
+        updateCardCvv,
+        setBankTheme,
+        flipCard,
+        showError,
+        clearError,
+        setLoading
+      };
+    })();
+
+    // Modulo 4: Controlador Principal (CardApp)
+    const CardApp = (() => {
+      const validateForm = () => {
+        let isValid = true;
+        const numVal = CardUI.DOM.inputNumber.value.replace(/\s/g, '');
+        const holderVal = CardUI.DOM.inputHolder.value.trim();
+        const expiryVal = CardUI.DOM.inputExpiry.value.trim();
+        const cvvVal = CardUI.DOM.inputCvv.value.trim();
+
+        // 1. Número do Cartão
+        if (numVal.length !== 16) {
+          CardUI.showError('number', 'Informe os 16 dígitos do cartão.');
+          isValid = false;
+        } else {
+          CardUI.clearError('number');
+        }
+
+        // 2. Nome do Titular
+        if (holderVal.length < 3) {
+          CardUI.showError('holder', 'Digite o nome impresso no cartão.');
+          isValid = false;
+        } else {
+          CardUI.clearError('holder');
+        }
+
+        // 3. Validade
+        if (!/^\d{2}\/\d{2}$/.test(expiryVal)) {
+          CardUI.showError('expiry', 'Data inválida (MM/AA).');
+          isValid = false;
+        } else {
+          CardUI.clearError('expiry');
+        }
+
+        // 4. CVV
+        if (cvvVal.length < 3) {
+          CardUI.showError('cvv', 'CVV inválido.');
+          isValid = false;
+        } else {
+          CardUI.clearError('cvv');
+        }
+
+        return isValid;
+      };
+
+      const bindEvents = () => {
+        // Evento de Seleção de Banco
+        CardUI.DOM.tabBtns.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const bank = e.currentTarget.dataset.bankTarget;
+            CardUI.setBankTheme(bank);
+          });
+        });
+
+        // Eventos de Input Máscara e Sincronização
+        CardUI.DOM.inputNumber.addEventListener('input', (e) => {
+          const formatted = Formatters.formatCardNumber(e.target.value);
+          e.target.value = formatted;
+          CardUI.updateCardNumber(formatted);
+          CardUI.clearError('number');
+        });
+
+        CardUI.DOM.inputHolder.addEventListener('input', (e) => {
+          CardUI.updateCardHolder(e.target.value);
+          CardUI.clearError('holder');
+        });
+
+        CardUI.DOM.inputExpiry.addEventListener('input', (e) => {
+          const formatted = Formatters.formatExpiry(e.target.value);
+          e.target.value = formatted;
+          CardUI.updateCardExpiry(formatted);
+          CardUI.clearError('expiry');
+        });
+
+        CardUI.DOM.inputCvv.addEventListener('input', (e) => {
+          const formatted = Formatters.formatCvv(e.target.value);
+          e.target.value = formatted;
+          CardUI.updateCardCvv(formatted);
+          CardUI.clearError('cvv');
+        });
+
+        // Virada 3D do Cartão ao Focar no CVV
+        CardUI.DOM.inputCvv.addEventListener('focus', () => CardUI.flipCard(true));
+        CardUI.DOM.inputCvv.addEventListener('blur', () => CardUI.flipCard(false));
+
+        // Submissão do Formulário
+        CardUI.DOM.form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          if (!validateForm()) {
+            CardUI.announce('O formulário contém erros de preenchimento.');
+            return;
+          }
+
+          CardUI.setLoading(true);
+          CardUI.announce('Processando pagamento seguro...');
+
+          // Simulação de resposta de API
+          setTimeout(() => {
+            CardUI.setLoading(false);
+            CardUI.announce('Pagamento realizado com sucesso!');
+            alert('🎉 Pagamento confirmado com sucesso!');
+          }, 1500);
+        });
+      };
+
+      return {
+        init: () => {
+          bindEvents();
+          CardUI.setBankTheme('nubank');
+        }
+      };
+    })();
+
+    // Inicialização segura ao carregar a árvore DOM
+    document.addEventListener('DOMContentLoaded', CardApp.init);
+  </script>
+</body>
+</html>
