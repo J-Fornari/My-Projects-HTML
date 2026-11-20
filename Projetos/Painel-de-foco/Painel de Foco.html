@@ -1,33 +1,56 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Painel de Foco - Aplicação acessível e de alta performance para Gestão de Metas Diárias.">
   <title>Painel de Foco - Gestão de Metas</title>
   <style>
     /* ==========================================================================
-       FRONTEND-DESIGN & SYSTEM-DESIGN: Design Tokens & Base Theme
+       1. FRONTEND-DESIGN & SYSTEM-DESIGN: Design Tokens & CSS Custom Properties
        ========================================================================== */
-    :root {
-      --bg-primary: #0d1117;
-      --bg-surface: #161b22;
-      --bg-surface-hover: #21262d;
-      --border-color: #30363d;
-      --text-primary: #f0f6fc;
-      --text-muted: #8b949e;
-      --accent-primary: #58a6ff;
-      --accent-focus: #1f6feb;
-      --status-success: #3fb950;
-      --status-danger: #f85149;
-      
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    @property --glow-angle {
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
     }
 
-    /* Reset semântico & acessibilidade básica */
+    :root {
+      /* Palette */
+      --bg-primary: #090d16;
+      --bg-surface: #111726;
+      --bg-surface-elevated: #161e31;
+      --bg-surface-hover: #1c263e;
+      --border-color: #26334d;
+      --border-focus: #3b82f6;
+      
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      
+      --accent-primary: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-glow: rgba(59, 130, 246, 0.35);
+      
+      --status-success: #10b981;
+      --status-success-bg: rgba(16, 185, 129, 0.12);
+      --status-danger: #ef4444;
+      --status-danger-hover: #dc2626;
+
+      /* Visual System */
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      
+      /* Animation Timing Functions */
+      --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-out-quad: cubic-bezier(0.25, 1, 0.5, 1);
+      --transition-fast: 150ms var(--ease-out-quad);
+      --transition-normal: 250ms var(--ease-out-quad);
+    }
+
+    /* CSS Reset & Base */
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
@@ -38,54 +61,126 @@
       background-color: var(--bg-primary);
       color: var(--text-primary);
       font-family: var(--font-sans);
-      line-height: 1.5;
+      line-height: 1.6;
       min-height: 100vh;
       display: grid;
       place-items: center;
       padding: 1.5rem;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ACCESSIBILITY-REVIEW: Indicador global de foco via teclado */
+    /* ACCESSIBILITY-REVIEW: Foco WCAG 2.1 AA Visível e de Alto Contraste */
     :focus-visible {
       outline: 2px solid var(--accent-primary);
-      outline-offset: 2px;
+      outline-offset: 3px;
+      border-radius: var(--radius-sm);
     }
 
     /* ==========================================================================
-       FRONTEND-DESIGN: Layout & Componentes Visualmente Polidos
+       2. FRONTEND-DESIGN & UI-ANIMATION: Card Component & Layout Engine
        ========================================================================== */
     .app-card {
+      position: relative;
       background-color: var(--bg-surface);
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-lg);
       width: 100%;
-      max-width: 520px;
-      padding: 1.75rem;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      max-width: 560px;
+      padding: 2rem;
+      box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.65), 0 0 15px rgba(59, 130, 246, 0.05);
+      transition: transform var(--transition-normal), border-color var(--transition-normal);
+      will-change: transform;
+    }
+
+    .app-card::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: calc(var(--radius-lg) + 1px);
+      background: conic-gradient(from var(--glow-angle) at 50% 50%, transparent 60%, var(--accent-primary), transparent 90%);
+      z-index: -1;
+      opacity: 0.4;
+      animation: rotate-glow 8s linear infinite;
+    }
+
+    @keyframes rotate-glow {
+      to { --glow-angle: 360deg; }
     }
 
     .app-header {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.75rem;
       border-bottom: 1px solid var(--border-color);
-      padding-bottom: 1rem;
+      padding-bottom: 1.25rem;
+    }
+
+    .header-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
     }
 
     .app-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      background: linear-gradient(135deg, #ffffff 30%, var(--text-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .app-subtitle {
-      color: var(--text-muted);
-      font-size: 0.875rem;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
       margin-top: 0.25rem;
     }
 
+    /* Progresso e Estatísticas */
+    .progress-container {
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background-color: var(--bg-primary);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-primary), var(--status-success));
+      border-radius: 999px;
+      transition: width 400ms var(--ease-out-quad);
+      will-change: width;
+    }
+
+    /* ==========================================================================
+       3. MICRO-INTERACTIONS & UX-COPY: Formulário e Controles de Entrada
+       ========================================================================== */
     .task-form {
       display: flex;
-      gap: 0.5rem;
+      flex-direction: column;
+      gap: 0.75rem;
       margin-bottom: 1.5rem;
+    }
+
+    .input-wrapper {
+      display: flex;
+      gap: 0.625rem;
     }
 
     .input-field {
@@ -94,70 +189,249 @@
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
       color: var(--text-primary);
-      padding: 0.625rem 0.875rem;
-      font-size: 0.875rem;
-      transition: border-color var(--transition-fast);
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .input-field:hover {
+      border-color: var(--text-muted);
+    }
+
+    .input-field:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
     .input-field::placeholder {
       color: var(--text-muted);
     }
 
+    .form-error {
+      color: var(--status-danger);
+      font-size: 0.8rem;
+      min-height: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .form-error.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     .btn-primary {
-      background-color: var(--accent-focus);
+      position: relative;
+      background-color: var(--accent-primary);
       color: #ffffff;
       border: none;
       border-radius: var(--radius-sm);
-      padding: 0.625rem 1rem;
-      font-size: 0.875rem;
-      font-weight: 500;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: background-color var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: background-color var(--transition-fast), transform 100ms ease, box-shadow var(--transition-fast);
+      user-select: none;
+      white-space: nowrap;
     }
 
     .btn-primary:hover {
-      background-color: var(--accent-primary);
+      background-color: var(--accent-hover);
+      box-shadow: 0 4px 12px var(--accent-glow);
     }
 
+    .btn-primary:active {
+      transform: scale(0.97);
+    }
+
+    .btn-primary[disabled] {
+      opacity: 0.75;
+      cursor: not-allowed;
+    }
+
+    /* Micro-interação: Spinner de carregamento */
+    .btn-spinner {
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 600ms linear infinite;
+      display: none;
+    }
+
+    .btn-primary.loading .btn-text {
+      visibility: hidden;
+      opacity: 0;
+    }
+
+    .btn-primary.loading .btn-spinner {
+      display: block;
+      position: absolute;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Barra de Filtros */
+    .filter-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.75rem;
+    }
+
+    .filter-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: color var(--transition-fast), background-color var(--transition-fast);
+    }
+
+    .filter-btn:hover {
+      color: var(--text-primary);
+      background-color: var(--bg-surface-hover);
+    }
+
+    .filter-btn.active {
+      color: var(--accent-primary);
+      background-color: rgba(59, 130, 246, 0.1);
+      font-weight: 600;
+    }
+
+    /* ==========================================================================
+       4. UI-ANIMATION: Lista de Tarefas & Transições 60fps
+       ========================================================================== */
     .task-list {
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.625rem;
+      max-height: 380px;
+      overflow-y: auto;
+      padding-right: 0.25rem;
     }
 
     .task-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.75rem 1rem;
+      padding: 0.875rem 1rem;
       background-color: var(--bg-primary);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
-      transition: background-color var(--transition-fast);
+      transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+      animation: taskAppear 250ms var(--ease-elastic) forwards;
+      will-change: transform, opacity;
     }
 
     .task-item:hover {
       background-color: var(--bg-surface-hover);
+      border-color: var(--border-focus);
+      transform: translateY(-1px);
+    }
+
+    .task-item.removing {
+      animation: taskRemove 200ms var(--ease-out-quad) forwards;
+    }
+
+    @keyframes taskAppear {
+      from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes taskRemove {
+      from {
+        opacity: 1;
+        transform: scale(1);
+        max-height: 60px;
+      }
+      to {
+        opacity: 0;
+        transform: scale(0.92) translateY(6px);
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin: 0;
+        border: none;
+      }
     }
 
     .task-label {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.875rem;
       cursor: pointer;
       flex: 1;
-      font-size: 0.875rem;
+      font-size: 0.9rem;
+      word-break: break-word;
     }
 
-    .task-checkbox {
-      width: 1.125rem;
-      height: 1.125rem;
-      accent-color: var(--accent-primary);
+    /* Checkbox Customizado Acessível */
+    .task-checkbox-custom {
+      appearance: none;
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 2px solid var(--text-muted);
+      border-radius: 4px;
+      background-color: transparent;
       cursor: pointer;
+      display: grid;
+      place-content: center;
+      transition: background-color var(--transition-fast), border-color var(--transition-fast), transform 100ms ease;
+      flex-shrink: 0;
     }
 
-    .task-checkbox:checked + .task-text {
+    .task-checkbox-custom::before {
+      content: "";
+      width: 0.65rem;
+      height: 0.65rem;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+      transform: scale(0);
+      background-color: #ffffff;
+      transition: transform 150ms var(--ease-elastic);
+    }
+
+    .task-checkbox-custom:checked {
+      background-color: var(--status-success);
+      border-color: var(--status-success);
+    }
+
+    .task-checkbox-custom:checked::before {
+      transform: scale(1);
+    }
+
+    .task-checkbox-custom:active {
+      transform: scale(0.88);
+    }
+
+    .task-text {
+      transition: color var(--transition-fast), text-decoration-color var(--transition-fast);
+      color: var(--text-primary);
+    }
+
+    .task-checkbox-custom:checked + .task-text {
       text-decoration: line-through;
       color: var(--text-muted);
     }
@@ -167,33 +441,58 @@
       border: none;
       color: var(--text-muted);
       cursor: pointer;
-      padding: 0.25rem 0.5rem;
+      padding: 0.35rem 0.6rem;
       border-radius: var(--radius-sm);
-      font-size: 0.75rem;
-      transition: color var(--transition-fast);
+      font-size: 0.8rem;
+      font-weight: 500;
+      transition: color var(--transition-fast), background-color var(--transition-fast), transform 100ms ease;
     }
 
     .btn-delete:hover {
       color: var(--status-danger);
+      background-color: rgba(239, 68, 68, 0.1);
     }
 
+    .btn-delete:active {
+      transform: scale(0.92);
+    }
+
+    /* Estado Vazio Refinado */
     .empty-state {
       text-align: center;
-      padding: 2rem 1rem;
-      color: var(--text-muted);
-      font-size: 0.875rem;
+      padding: 2.5rem 1rem;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
       border: 1px dashed var(--border-color);
       border-radius: var(--radius-sm);
+      background-color: rgba(255, 255, 255, 0.01);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
     }
 
-    /* ACCESSIBILITY-REVIEW: Suporte para preferência de movimento reduzido */
+    .empty-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      color: var(--text-muted);
+      opacity: 0.6;
+    }
+
+    /* ACCESSIBILITY-REVIEW: Suporte para preferências de movimento reduzido */
     @media (prefers-reduced-motion: reduce) {
-      * {
-        transition: none !important;
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .app-card::before {
+        display: none;
       }
     }
 
-    /* Região de leitores de tela (Visualmente oculta) */
+    /* Utilidades de Acessibilidade */
     .sr-only {
       position: absolute;
       width: 1px;
@@ -209,186 +508,412 @@
 </head>
 <body>
 
-  <!-- SYSTEM-DESIGN & ACCESSIBILITY-REVIEW: Estrutura Semântica Principal -->
   <main class="app-card">
     <header class="app-header">
-      <h1 class="app-title">Painel de Foco</h1>
-      <!-- UX-COPY: Texto auxiliar claro e direto -->
-      <p class="app-subtitle">Organize suas prioridades diárias com clareza.</p>
+      <div class="header-top-row">
+        <h1 class="app-title">Painel de Foco</h1>
+      </div>
+      <p class="app-subtitle">Organize suas prioridades diárias com clareza e alta performance.</p>
+      
+      <!-- Progresso visual -->
+      <div class="progress-container" aria-label="Progresso das metas">
+        <div class="progress-meta">
+          <span id="progressText">0 de 0 metas concluídas</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progressBarTrack">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+      </div>
     </header>
 
-    <!-- UX-COPY: Formulário com rótulos e botões descritivos -->
-    <form id="taskForm" class="task-form" aria-label="Adicionar nova meta">
-      <label for="taskInput" class="sr-only">Descrição da meta</label>
-      <input 
-        type="text" 
-        id="taskInput" 
-        class="input-field" 
-        placeholder="Ex: Refatorar módulo de autenticação..." 
-        required 
-        maxlength="100"
-        autocomplete="off"
-      >
-      <button type="submit" class="btn-primary">Adicionar Meta</button>
+    <!-- Formulário Principal -->
+    <form id="taskForm" class="task-form" aria-label="Adicionar nova meta" novalidate>
+      <div class="input-wrapper">
+        <label for="taskInput" class="sr-only">Descrição da meta</label>
+        <input 
+          type="text" 
+          id="taskInput" 
+          class="input-field" 
+          placeholder="Ex: Refatorar módulo de autenticação..." 
+          required 
+          maxlength="120"
+          autocomplete="off"
+          aria-describedby="formError"
+        >
+        <button type="submit" id="btnSubmit" class="btn-primary" aria-label="Adicionar nova meta">
+          <span class="btn-text">+ Adicionar</span>
+          <span class="btn-spinner" aria-hidden="true"></span>
+        </button>
+      </div>
+      <div id="formError" class="form-error" role="alert" aria-live="assertive"></div>
     </form>
 
-    <!-- ACCESSIBILITY-REVIEW: Região dinâmica para leitura de acessibilidade -->
-    <div id="screenReaderAnnouncer" class="sr-only" aria-live="polite"></div>
+    <!-- Região Live ARIA para Leitores de Tela -->
+    <div id="screenReaderAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
+    <!-- Filtros de Estado -->
+    <div class="filter-bar" role="group" aria-label="Filtrar metas por status">
+      <button type="button" class="filter-btn active" data-filter="all" aria-pressed="true">Todas</button>
+      <button type="button" class="filter-btn" data-filter="pending" aria-pressed="false">Pendentes</button>
+      <button type="button" class="filter-btn" data-filter="completed" aria-pressed="false">Concluídas</button>
+    </div>
+
+    <!-- Lista de Metas -->
     <section aria-label="Lista de prioridades">
-      <ul id="taskList" class="task-list"></ul>
+      <ul id="taskList" class="task-list" role="list"></ul>
       <div id="emptyState" class="empty-state" hidden>
-        <!-- UX-COPY: Estado vazio motivador e sem termos ambíguos -->
-        Sua lista está limpa. Adicione uma meta acima para começar.
+        <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+        <span id="emptyStateText">Sua lista está limpa. Adicione uma meta acima para focar no seu dia.</span>
       </div>
     </section>
   </main>
 
   <script>
     /**
+     * ==========================================================================
      * SYSTEM-DESIGN & ENGINEERING:CODE-REVIEW
-     * Padrão Módulo/State-Driven para gestão de tarefas isolada do DOM.
+     * Arquitetura Modular Baseada em Estado Reativo (State-Driven Component Architecture)
+     * ==========================================================================
      */
-    const TaskManager = (() => {
-      // Estado privado do sistema
-      let state = [
-        { id: '1', title: 'Revisar arquitetura do sistema', completed: false },
-        { id: '2', title: 'Implementar testes de acessibilidade WCAG', completed: true }
+    "use strict";
+
+    // Modulo de Armazenamento Seguro e Isolado (TaskStore)
+    const TaskStore = (() => {
+      const STORAGE_KEY = 'painel_foco_tasks_v2';
+      
+      const defaultState = [
+        { id: '1', title: 'Revisar arquitetura do sistema', completed: false, createdAt: Date.now() - 100000 },
+        { id: '2', title: 'Implementar testes de acessibilidade WCAG', completed: true, createdAt: Date.now() - 50000 }
       ];
 
-      // Elementos do DOM mantidos em cache
-      const DOM = {
-        form: document.getElementById('taskForm'),
-        input: document.getElementById('taskInput'),
-        list: document.getElementById('taskList'),
-        emptyState: document.getElementById('emptyState'),
-        announcer: document.getElementById('screenReaderAnnouncer')
-      };
+      let tasks = [];
+      let currentFilter = 'all'; // 'all' | 'pending' | 'completed'
+      const subscribers = new Set();
 
-      /**
-       * ACCESSIBILITY-REVIEW: Notifica leitores de tela sobre alterações no estado.
-       */
-      const announce = (message) => {
-        DOM.announcer.textContent = '';
-        setTimeout(() => {
-          DOM.announcer.textContent = message;
-        }, 100);
-      };
-
-      /**
-       * ENGINEERING:CODE-REVIEW: Renderização determinística com base no Estado
-       */
-      const render = () => {
-        DOM.list.innerHTML = '';
-
-        if (state.length === 0) {
-          DOM.emptyState.hidden = false;
-          return;
+      const load = () => {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          tasks = raw ? JSON.parse(raw) : defaultState;
+        } catch (e) {
+          console.warn('[TaskStore] Falha ao carregar do storage, utilizando padrão:', e);
+          tasks = defaultState;
         }
-
-        DOM.emptyState.hidden = true;
-
-        state.forEach(task => {
-          const li = document.createElement('li');
-          li.className = 'task-item';
-          li.dataset.id = task.id;
-
-          // FRONTEND-DESIGN & ACCESSIBILITY: Controles nativos acessíveis
-          li.innerHTML = `
-            <label class="task-label">
-              <input 
-                type="checkbox" 
-                class="task-checkbox" 
-                ${task.completed ? 'checked' : ''}
-                aria-label="Marcar '${task.title}' como concluída"
-              >
-              <span class="task-text">${escapeHTML(task.title)}</span>
-            </label>
-            <button 
-              type="button" 
-              class="btn-delete" 
-              aria-label="Excluir meta '${task.title}'"
-            >
-              Excluir
-            </button>
-          `;
-
-          DOM.list.appendChild(li);
-        });
       };
 
-      // Proteção contra Injeção de código (XSS)
-      const escapeHTML = (str) => {
-        return str.replace(/[&<>'"]/g, 
-          tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-        );
+      const save = () => {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+        } catch (e) {
+          console.error('[TaskStore] Erro ao salvar dados:', e);
+        }
       };
 
-      /**
-       * SYSTEM-DESIGN: Mutadores de Estado
-       */
-      const addTask = (title) => {
-        const newTask = { id: Date.now().toString(), title, completed: false };
-        state.push(newTask);
-        render();
-        announce(`Meta "${title}" foi adicionada com sucesso.`);
+      const notify = (actionType, payload) => {
+        subscribers.forEach(fn => fn(getState(), actionType, payload));
       };
 
-      const toggleTask = (id) => {
-        state = state.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
-        render();
-      };
-
-      const deleteTask = (id) => {
-        const task = state.find(t => t.id === id);
-        state = state.filter(t => t.id !== id);
-        render();
-        if (task) announce(`Meta "${task.title}" foi removida.`);
-      };
-
-      /**
-       * ENGINEERING:CODE-REVIEW: Gestão unificada de eventos (Event Delegation)
-       */
-      const initEvents = () => {
-        DOM.form.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const value = DOM.input.value.trim();
-          if (value) {
-            addTask(value);
-            DOM.input.value = '';
-            DOM.input.focus();
-          }
-        });
-
-        DOM.list.addEventListener('click', (e) => {
-          const item = e.target.closest('.task-item');
-          if (!item) return;
-
-          const id = item.dataset.id;
-
-          if (e.target.matches('.btn-delete')) {
-            deleteTask(id);
-          }
-        });
-
-        DOM.list.addEventListener('change', (e) => {
-          if (e.target.matches('.task-checkbox')) {
-            const item = e.target.closest('.task-item');
-            toggleTask(item.dataset.id);
-          }
-        });
-      };
+      const getState = () => ({
+        tasks: [...tasks],
+        filter: currentFilter,
+        stats: {
+          total: tasks.length,
+          completed: tasks.filter(t => t.completed).length,
+          pending: tasks.filter(t => !t.completed).length,
+          percentage: tasks.length === 0 ? 0 : Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100)
+        }
+      });
 
       return {
-        init: () => {
-          initEvents();
-          render();
+        init: () => load(),
+        subscribe: (fn) => subscribers.add(fn),
+        setFilter: (filter) => {
+          currentFilter = filter;
+          notify('FILTER_CHANGE');
+        },
+        add: (title) => {
+          const newTask = {
+            id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+            title: title.trim(),
+            completed: false,
+            createdAt: Date.now()
+          };
+          tasks.unshift(newTask);
+          save();
+          notify('TASK_ADDED', newTask);
+        },
+        toggle: (id) => {
+          tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+          save();
+          notify('TASK_TOGGLED', { id });
+        },
+        remove: (id) => {
+          const target = tasks.find(t => t.id === id);
+          tasks = tasks.filter(t => t.id !== id);
+          save();
+          notify('TASK_REMOVED', target);
+        },
+        getFilteredTasks: () => {
+          if (currentFilter === 'pending') return tasks.filter(t => !t.completed);
+          if (currentFilter === 'completed') return tasks.filter(t => t.completed);
+          return tasks;
         }
       };
     })();
 
-    // Inicialização segura
-    document.addEventListener('DOMContentLoaded', TaskManager.init);
+    // Camada de Apresentação e Manipulação Segura da DOM (TaskUI)
+    const TaskUI = (() => {
+      const DOM = {
+        form: document.getElementById('taskForm'),
+        input: document.getElementById('taskInput'),
+        btnSubmit: document.getElementById('btnSubmit'),
+        formError: document.getElementById('formError'),
+        list: document.getElementById('taskList'),
+        emptyState: document.getElementById('emptyState'),
+        emptyStateText: document.getElementById('emptyStateText'),
+        announcer: document.getElementById('screenReaderAnnouncer'),
+        progressText: document.getElementById('progressText'),
+        progressPercent: document.getElementById('progressPercent'),
+        progressBar: document.getElementById('progressBar'),
+        progressBarTrack: document.getElementById('progressBarTrack'),
+        filterBtns: document.querySelectorAll('.filter-btn')
+      };
+
+      /**
+       * ACCESSIBILITY-REVIEW: Anúncio dinâmico para Leitores de Tela (aria-live)
+       */
+      const announce = (message) => {
+        DOM.announcer.textContent = '';
+        requestAnimationFrame(() => {
+          DOM.announcer.textContent = message;
+        });
+      };
+
+      /**
+       * UX-COPY & ENGINEERING: Prevenção de XSS com construção nativa de nós da DOM
+       */
+      const createTaskNode = (task) => {
+        const li = document.createElement('li');
+        li.className = 'task-item';
+        li.dataset.id = task.id;
+        li.setAttribute('role', 'listitem');
+
+        const label = document.createElement('label');
+        label.className = 'task-label';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'task-checkbox-custom';
+        checkbox.checked = task.completed;
+        checkbox.setAttribute('aria-label', `Marcar "${task.title}" como ${task.completed ? 'pendente' : 'concluída'}`);
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'task-text';
+        textSpan.textContent = task.title; // Seguro contra Injeção de Código / XSS
+
+        label.appendChild(checkbox);
+        label.appendChild(textSpan);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'btn-delete';
+        deleteBtn.setAttribute('aria-label', `Excluir meta "${task.title}"`);
+        deleteBtn.textContent = 'Excluir';
+
+        li.appendChild(label);
+        li.appendChild(deleteBtn);
+
+        return li;
+      };
+
+      const renderStats = (stats) => {
+        DOM.progressText.textContent = `${stats.completed} de ${stats.total} metas concluídas`;
+        DOM.progressPercent.textContent = `${stats.percentage}%`;
+        DOM.progressBar.style.width = `${stats.percentage}%`;
+        DOM.progressBarTrack.setAttribute('aria-valuenow', stats.percentage);
+      };
+
+      const renderEmptyState = (isEmpty, filter) => {
+        if (!isEmpty) {
+          DOM.emptyState.hidden = true;
+          return;
+        }
+
+        DOM.emptyState.hidden = false;
+        if (filter === 'completed') {
+          DOM.emptyStateText.textContent = 'Nenhuma meta concluída até o momento.';
+        } else if (filter === 'pending') {
+          DOM.emptyStateText.textContent = 'Nenhuma meta pendente. Tudo em dia!';
+        } else {
+          DOM.emptyStateText.textContent = 'Sua lista está limpa. Adicione uma meta acima para focar no seu dia.';
+        }
+      };
+
+      const renderFilterStates = (currentFilter) => {
+        DOM.filterBtns.forEach(btn => {
+          const isActive = btn.dataset.filter === currentFilter;
+          btn.classList.toggle('active', isActive);
+          btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+      };
+
+      const showError = (msg) => {
+        DOM.formError.textContent = msg;
+        DOM.formError.classList.add('visible');
+        DOM.input.setAttribute('aria-invalid', 'true');
+      };
+
+      const clearError = () => {
+        DOM.formError.textContent = '';
+        DOM.formError.classList.remove('visible');
+        DOM.input.removeAttribute('aria-invalid');
+      };
+
+      const setSubmitLoading = (loading) => {
+        if (loading) {
+          DOM.btnSubmit.classList.add('loading');
+          DOM.btnSubmit.setAttribute('disabled', 'true');
+        } else {
+          DOM.btnSubmit.classList.remove('loading');
+          DOM.btnSubmit.removeAttribute('disabled');
+        }
+      };
+
+      return {
+        DOM,
+        showError,
+        clearError,
+        setSubmitLoading,
+        announce,
+        render: (state, filteredTasks) => {
+          renderStats(state.stats);
+          renderFilterStates(state.filter);
+          renderEmptyState(filteredTasks.length === 0, state.filter);
+
+          DOM.list.innerHTML = '';
+          const fragment = document.createDocumentFragment();
+          filteredTasks.forEach(task => {
+            fragment.appendChild(createTaskNode(task));
+          });
+          DOM.list.appendChild(fragment);
+        },
+        removeNodeWithAnimation: (id, callback) => {
+          const item = DOM.list.querySelector(`[data-id="${id}"]`);
+          if (item) {
+            item.classList.add('removing');
+            item.addEventListener('animationend', () => {
+              callback();
+            }, { once: true });
+          } else {
+            callback();
+          }
+        }
+      };
+    })();
+
+    // Controller Principal do App (TaskApp)
+    const TaskApp = (() => {
+      const handleAddSubmit = (e) => {
+        e.preventDefault();
+        const value = TaskUI.DOM.input.value.trim();
+
+        // UX-COPY: Validação com Microcopia Direta
+        if (!value) {
+          TaskUI.showError('Por favor, digite a descrição da meta.');
+          TaskUI.DOM.input.focus();
+          return;
+        }
+
+        if (value.length < 3) {
+          TaskUI.showError('A meta deve conter pelo menos 3 caracteres.');
+          TaskUI.DOM.input.focus();
+          return;
+        }
+
+        TaskUI.clearError();
+        TaskUI.setSubmitLoading(true);
+
+        // MICRO-INTERACTIONS: Transição tátil suave de inclusão
+        setTimeout(() => {
+          TaskStore.add(value);
+          TaskUI.DOM.input.value = '';
+          TaskUI.setSubmitLoading(false);
+          TaskUI.DOM.input.focus();
+        }, 150);
+      };
+
+      const handleListClick = (e) => {
+        const item = e.target.closest('.task-item');
+        if (!item) return;
+
+        const id = item.dataset.id;
+
+        if (e.target.matches('.btn-delete')) {
+          TaskUI.removeNodeWithAnimation(id, () => {
+            TaskStore.remove(id);
+          });
+        }
+      };
+
+      const handleListChange = (e) => {
+        if (e.target.matches('.task-checkbox-custom')) {
+          const item = e.target.closest('.task-item');
+          if (item) {
+            TaskStore.toggle(item.dataset.id);
+          }
+        }
+      };
+
+      const handleFilterClick = (e) => {
+        const btn = e.target.closest('.filter-btn');
+        if (btn && btn.dataset.filter) {
+          TaskStore.setFilter(btn.dataset.filter);
+        }
+      };
+
+      const handleInputKeypress = () => {
+        TaskUI.clearError();
+      };
+
+      // Inscrição na Reatividade do Store
+      TaskStore.subscribe((state, actionType, payload) => {
+        const filtered = TaskStore.getFilteredTasks();
+        TaskUI.render(state, filtered);
+
+        // Feedback Acessível para Leitores de Tela
+        if (actionType === 'TASK_ADDED') {
+          TaskUI.announce(`Meta "${payload.title}" adicionada com sucesso.`);
+        } else if (actionType === 'TASK_REMOVED') {
+          TaskUI.announce(`Meta "${payload ? payload.title : ''}" removida.`);
+        } else if (actionType === 'TASK_TOGGLED') {
+          TaskUI.announce('Status da meta atualizado.');
+        } else if (actionType === 'FILTER_CHANGE') {
+          TaskUI.announce(`Filtro alterado para ${state.filter}`);
+        }
+      });
+
+      return {
+        init: () => {
+          TaskStore.init();
+          
+          // Event Listeners Centralizados (Delegation)
+          TaskUI.DOM.form.addEventListener('submit', handleAddSubmit);
+          TaskUI.DOM.input.addEventListener('input', handleInputKeypress);
+          TaskUI.DOM.list.addEventListener('click', handleListClick);
+          TaskUI.DOM.list.addEventListener('change', handleListChange);
+          document.querySelector('.filter-bar').addEventListener('click', handleFilterClick);
+
+          // Render Inicial
+          const state = TaskStore.getState();
+          TaskUI.render(state, TaskStore.getFilteredTasks());
+        }
+      };
+    })();
+
+    // Inicialização da Aplicação após carregamento do DOM
+    document.addEventListener('DOMContentLoaded', TaskApp.init);
   </script>
 </body>
 </html>
