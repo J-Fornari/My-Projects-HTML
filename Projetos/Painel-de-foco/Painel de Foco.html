@@ -1,0 +1,394 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Foco - Gestão de Metas</title>
+  <style>
+    /* ==========================================================================
+       FRONTEND-DESIGN & SYSTEM-DESIGN: Design Tokens & Base Theme
+       ========================================================================== */
+    :root {
+      --bg-primary: #0d1117;
+      --bg-surface: #161b22;
+      --bg-surface-hover: #21262d;
+      --border-color: #30363d;
+      --text-primary: #f0f6fc;
+      --text-muted: #8b949e;
+      --accent-primary: #58a6ff;
+      --accent-focus: #1f6feb;
+      --status-success: #3fb950;
+      --status-danger: #f85149;
+      
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Reset semântico & acessibilidade básica */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 1.5rem;
+    }
+
+    /* ACCESSIBILITY-REVIEW: Indicador global de foco via teclado */
+    :focus-visible {
+      outline: 2px solid var(--accent-primary);
+      outline-offset: 2px;
+    }
+
+    /* ==========================================================================
+       FRONTEND-DESIGN: Layout & Componentes Visualmente Polidos
+       ========================================================================== */
+    .app-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      width: 100%;
+      max-width: 520px;
+      padding: 1.75rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .app-header {
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1rem;
+    }
+
+    .app-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .app-subtitle {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+
+    .task-form {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .input-field {
+      flex: 1;
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      padding: 0.625rem 0.875rem;
+      font-size: 0.875rem;
+      transition: border-color var(--transition-fast);
+    }
+
+    .input-field::placeholder {
+      color: var(--text-muted);
+    }
+
+    .btn-primary {
+      background-color: var(--accent-focus);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 0.625rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color var(--transition-fast);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-primary);
+    }
+
+    .task-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      transition: background-color var(--transition-fast);
+    }
+
+    .task-item:hover {
+      background-color: var(--bg-surface-hover);
+    }
+
+    .task-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+      flex: 1;
+      font-size: 0.875rem;
+    }
+
+    .task-checkbox {
+      width: 1.125rem;
+      height: 1.125rem;
+      accent-color: var(--accent-primary);
+      cursor: pointer;
+    }
+
+    .task-checkbox:checked + .task-text {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .btn-delete {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      transition: color var(--transition-fast);
+    }
+
+    .btn-delete:hover {
+      color: var(--status-danger);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-sm);
+    }
+
+    /* ACCESSIBILITY-REVIEW: Suporte para preferência de movimento reduzido */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+      }
+    }
+
+    /* Região de leitores de tela (Visualmente oculta) */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SYSTEM-DESIGN & ACCESSIBILITY-REVIEW: Estrutura Semântica Principal -->
+  <main class="app-card">
+    <header class="app-header">
+      <h1 class="app-title">Painel de Foco</h1>
+      <!-- UX-COPY: Texto auxiliar claro e direto -->
+      <p class="app-subtitle">Organize suas prioridades diárias com clareza.</p>
+    </header>
+
+    <!-- UX-COPY: Formulário com rótulos e botões descritivos -->
+    <form id="taskForm" class="task-form" aria-label="Adicionar nova meta">
+      <label for="taskInput" class="sr-only">Descrição da meta</label>
+      <input 
+        type="text" 
+        id="taskInput" 
+        class="input-field" 
+        placeholder="Ex: Refatorar módulo de autenticação..." 
+        required 
+        maxlength="100"
+        autocomplete="off"
+      >
+      <button type="submit" class="btn-primary">Adicionar Meta</button>
+    </form>
+
+    <!-- ACCESSIBILITY-REVIEW: Região dinâmica para leitura de acessibilidade -->
+    <div id="screenReaderAnnouncer" class="sr-only" aria-live="polite"></div>
+
+    <section aria-label="Lista de prioridades">
+      <ul id="taskList" class="task-list"></ul>
+      <div id="emptyState" class="empty-state" hidden>
+        <!-- UX-COPY: Estado vazio motivador e sem termos ambíguos -->
+        Sua lista está limpa. Adicione uma meta acima para começar.
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /**
+     * SYSTEM-DESIGN & ENGINEERING:CODE-REVIEW
+     * Padrão Módulo/State-Driven para gestão de tarefas isolada do DOM.
+     */
+    const TaskManager = (() => {
+      // Estado privado do sistema
+      let state = [
+        { id: '1', title: 'Revisar arquitetura do sistema', completed: false },
+        { id: '2', title: 'Implementar testes de acessibilidade WCAG', completed: true }
+      ];
+
+      // Elementos do DOM mantidos em cache
+      const DOM = {
+        form: document.getElementById('taskForm'),
+        input: document.getElementById('taskInput'),
+        list: document.getElementById('taskList'),
+        emptyState: document.getElementById('emptyState'),
+        announcer: document.getElementById('screenReaderAnnouncer')
+      };
+
+      /**
+       * ACCESSIBILITY-REVIEW: Notifica leitores de tela sobre alterações no estado.
+       */
+      const announce = (message) => {
+        DOM.announcer.textContent = '';
+        setTimeout(() => {
+          DOM.announcer.textContent = message;
+        }, 100);
+      };
+
+      /**
+       * ENGINEERING:CODE-REVIEW: Renderização determinística com base no Estado
+       */
+      const render = () => {
+        DOM.list.innerHTML = '';
+
+        if (state.length === 0) {
+          DOM.emptyState.hidden = false;
+          return;
+        }
+
+        DOM.emptyState.hidden = true;
+
+        state.forEach(task => {
+          const li = document.createElement('li');
+          li.className = 'task-item';
+          li.dataset.id = task.id;
+
+          // FRONTEND-DESIGN & ACCESSIBILITY: Controles nativos acessíveis
+          li.innerHTML = `
+            <label class="task-label">
+              <input 
+                type="checkbox" 
+                class="task-checkbox" 
+                ${task.completed ? 'checked' : ''}
+                aria-label="Marcar '${task.title}' como concluída"
+              >
+              <span class="task-text">${escapeHTML(task.title)}</span>
+            </label>
+            <button 
+              type="button" 
+              class="btn-delete" 
+              aria-label="Excluir meta '${task.title}'"
+            >
+              Excluir
+            </button>
+          `;
+
+          DOM.list.appendChild(li);
+        });
+      };
+
+      // Proteção contra Injeção de código (XSS)
+      const escapeHTML = (str) => {
+        return str.replace(/[&<>'"]/g, 
+          tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+      };
+
+      /**
+       * SYSTEM-DESIGN: Mutadores de Estado
+       */
+      const addTask = (title) => {
+        const newTask = { id: Date.now().toString(), title, completed: false };
+        state.push(newTask);
+        render();
+        announce(`Meta "${title}" foi adicionada com sucesso.`);
+      };
+
+      const toggleTask = (id) => {
+        state = state.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+        render();
+      };
+
+      const deleteTask = (id) => {
+        const task = state.find(t => t.id === id);
+        state = state.filter(t => t.id !== id);
+        render();
+        if (task) announce(`Meta "${task.title}" foi removida.`);
+      };
+
+      /**
+       * ENGINEERING:CODE-REVIEW: Gestão unificada de eventos (Event Delegation)
+       */
+      const initEvents = () => {
+        DOM.form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const value = DOM.input.value.trim();
+          if (value) {
+            addTask(value);
+            DOM.input.value = '';
+            DOM.input.focus();
+          }
+        });
+
+        DOM.list.addEventListener('click', (e) => {
+          const item = e.target.closest('.task-item');
+          if (!item) return;
+
+          const id = item.dataset.id;
+
+          if (e.target.matches('.btn-delete')) {
+            deleteTask(id);
+          }
+        });
+
+        DOM.list.addEventListener('change', (e) => {
+          if (e.target.matches('.task-checkbox')) {
+            const item = e.target.closest('.task-item');
+            toggleTask(item.dataset.id);
+          }
+        });
+      };
+
+      return {
+        init: () => {
+          initEvents();
+          render();
+        }
+      };
+    })();
+
+    // Inicialização segura
+    document.addEventListener('DOMContentLoaded', TaskManager.init);
+  </script>
+</body>
+</html>
