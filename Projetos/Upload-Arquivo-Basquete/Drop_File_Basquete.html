@@ -41,7 +41,7 @@
       --status-success-bg: rgba(16, 185, 129, 0.12);
       --net-color: #94a3b8;
       
-      --card-shadow: 0 10px 25px 65px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+      --card-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
       --font-family: 'Figtree', system-ui, -apple-system, sans-serif;
       
       --radius-sm: 8px;
@@ -130,7 +130,7 @@
       left: 0;
       right: 0;
       top: 0;
-      z-index: 50;
+      z-index: 20;
       pointer-events: none;
       padding: 1.25rem 1.5rem;
       display: flex;
@@ -303,10 +303,10 @@
     .hoop-svg {
       position: absolute;
       left: 0;
-      top: 0;
+      top: 35;
       width: 400px;
       height: 260px;
-      z-index: 3;
+      z-index: 1;
       pointer-events: none;
       overflow: visible;
     }
