@@ -22,5 +22,5 @@ O projeto adota o padrão **Module Pattern** com renderização reativa baseada 
 
 ## 💻 Como Executar
 
-1. Baixe o arquivo `index.html`.
+1. Baixe o arquivo `Painel_de_Foco.html`.
 2. Abra-o em qualquer navegador moderno. Não requer dependências externas ou transpilação.
