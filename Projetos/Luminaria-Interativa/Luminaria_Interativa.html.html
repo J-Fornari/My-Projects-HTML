@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Tela de login com luminária interativa: puxe a corrente para acender a luz e acessar a conta.">
+<meta name="theme-color" content="#0a0f0d">
+<title>Acesso ao sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Young+Serif&display=swap" rel="stylesheet">
+<style>
+:root{--night:#0a0f0d;--glass:#0f5a43;--brass:#c8993a;--glow:#ffd98a;--paper:#f4ecda;--ink:#18231e;--soft:#4a5a50;--err:#a32d1a;--text:#e9dfc8;--text-soft:#b9ae94;
+--serif:"Young Serif",Georgia,"Times New Roman",serif;--sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--ease:cubic-bezier(.16,1,.3,1);
+color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit;margin:0;padding:0}
+body{background:var(--night);color:var(--text);font:400 1rem/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+:focus-visible{outline:3px solid var(--glow);outline-offset:3px}
+.card :focus-visible,dialog :focus-visible{outline-color:var(--glass)}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+
+.scene{position:relative;min-height:100dvh;display:grid;place-items:center;padding:2rem 1.25rem 5rem;overflow:hidden;isolation:isolate}
+#fog{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.9;transition:opacity 1.2s var(--ease)}
+.scene[data-lit=true] #fog{opacity:.35}
+.pool{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity 1.4s var(--ease);
+background:radial-gradient(ellipse 55% 60% at 72% 50%,rgba(255,217,138,.3),rgba(200,153,58,.1) 45%,transparent 72%)}
+.scene[data-lit=true] .pool{opacity:1}
+.stage{position:relative;z-index:2;width:100%;max-width:960px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,400px);align-items:center;gap:clamp(2rem,6vw,5rem)}
+
+.lamp{display:flex;flex-direction:column;align-items:center}
+.lamp svg{width:100%;max-width:320px;height:auto;display:block;overflow:visible}
+.shade{stroke:#3a4144;stroke-width:1}
+.head{transform-origin:262px 96px;transform:rotate(-65deg)}
+.glow,.beam{opacity:0;transition:opacity .7s var(--ease)}
+.bulb{opacity:.18;transition:opacity .4s}
+.scene[data-lit=true] .glow{opacity:1}
+.scene[data-lit=true] .beam,.scene[data-lit=true] .bulb{opacity:1}
+.scene[data-lit=true] .shade{filter:drop-shadow(0 0 22px rgba(255,217,138,.45))}
+.chain{stroke:#d9a838;stroke-width:3;stroke-linecap:round;stroke-dasharray:.1 5.5}
+.pull{cursor:grab;outline:none;touch-action:none}
+.pull.drag{cursor:grabbing}
+.bead{fill:url(#g5);stroke:#f6dc9b;stroke-width:1;transition:filter .2s}
+.pull:hover .bead{filter:brightness(1.2) drop-shadow(0 0 8px rgba(255,217,138,.7))}
+.ring{fill:none;stroke:var(--glow);stroke-width:2.5;opacity:0}
+.pull:focus-visible .ring{opacity:1}
+.hint{margin-top:1.25rem;max-width:26ch;text-align:center;color:var(--text-soft);font-size:.95rem}
+
+.card{background:var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .14 0 0 0 0 .12 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+color:var(--ink);border-top:6px solid var(--glass);border-radius:3px;padding:2.25rem 2rem 2rem;
+box-shadow:0 30px 60px -20px rgba(0,0,0,.85),0 0 70px rgba(255,217,138,.2);
+opacity:0;visibility:hidden;transform:translateY(20px);transition:opacity .6s var(--ease),transform .6s var(--ease),visibility 0s linear .6s}
+.scene[data-lit=true] .card{opacity:1;visibility:visible;transform:none;transition-delay:.2s,.2s,0s}
+.card h2,.dlg h2{font:400 2rem/1.15 var(--serif);letter-spacing:-.01em}
+.sub{margin:.4rem 0 1.75rem;color:var(--soft)}
+form{display:flex;flex-direction:column;gap:1rem}
+.field{display:flex;flex-direction:column}
+.row{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+label{font-weight:600;font-size:.9rem}
+.input{width:100%;min-height:48px;background:transparent;border:0;border-bottom:2px solid var(--ink);border-radius:0;padding:.5rem 0;font:inherit;font-size:1.05rem;color:var(--ink)}
+.input::placeholder{color:#566359}
+.input:focus{border-bottom-color:var(--glass)}
+.input.error{border-bottom-color:var(--err)}
+.err{min-height:1.4rem;padding-top:.2rem;color:var(--err);font-size:.85rem;font-weight:500}
+.pw{position:relative}
+.pw .input{padding-right:5.5rem}
+.link,.toggle{min-height:44px;min-width:44px;padding:0 .4rem;background:none;border:0;color:var(--glass);font:600 .9rem var(--sans);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.toggle{position:absolute;right:0;bottom:2px}
+.check{display:flex;align-items:center;gap:.75rem;min-height:44px;cursor:pointer;font-size:.95rem}
+.check input{appearance:none;flex:none;width:24px;height:24px;display:grid;place-content:center;background:transparent;border:2px solid var(--ink);border-radius:3px;cursor:pointer}
+.check input::before{content:"";width:12px;height:12px;background:#fff;clip-path:polygon(14% 44%,0 65%,50% 100%,100% 16%,80% 0,43% 62%);transform:scale(0);transition:transform .15s var(--ease)}
+.check input:checked{background:var(--glass);border-color:var(--glass)}
+.check input:checked::before{transform:scale(1)}
+.msg{min-height:1.5rem;font-size:.95rem;font-weight:500;color:var(--glass)}
+.msg.bad{color:var(--err)}
+.btn{position:relative;width:100%;min-height:52px;padding:0 1.25rem;background:var(--glass);color:#fff;border:0;border-radius:3px;font:700 1.05rem var(--sans);cursor:pointer;transition:background .2s,transform .1s}
+.btn:hover{background:#0b4734}
+.btn:active{transform:translateY(1px)}
+.btn.busy{cursor:progress}
+.btn.busy span{visibility:hidden}
+.btn.busy::after{content:"";position:absolute;inset:0;margin:auto;width:20px;height:20px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+.or{display:flex;align-items:center;gap:1rem;margin:1.25rem 0;color:var(--soft);font-size:.9rem}
+.or::before,.or::after{content:"";flex:1;height:1px;background:rgba(24,35,30,.35)}
+.alt{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.ghost{display:flex;align-items:center;justify-content:center;gap:.5rem;min-height:44px;background:transparent;border:1.5px solid var(--ink);border-radius:3px;color:var(--ink);font:600 .95rem var(--sans);cursor:pointer}
+.ghost:hover{background:rgba(24,35,30,.08)}
+.ghost svg{width:18px;height:18px}
+
+dialog{margin:auto;width:min(92vw,420px);padding:0;background:var(--paper);color:var(--ink);border:0;border-top:6px solid var(--glass);border-radius:3px;box-shadow:0 30px 70px rgba(0,0,0,.7)}
+dialog::backdrop{background:rgba(5,9,7,.75);backdrop-filter:blur(6px)}
+dialog[open]{animation:pop .3s var(--ease)}
+.dlg{padding:2rem}
+.dlg h2{font-size:1.6rem}
+.dlg p.sub{margin-bottom:1rem}
+.actions{display:flex;justify-content:flex-end;gap:.75rem;margin-top:.5rem}
+.actions .btn{width:auto}
+.calm{position:fixed;z-index:5;left:max(1rem,env(safe-area-inset-left,0px));bottom:calc(1rem + env(safe-area-inset-bottom,0px));min-height:44px;padding:0 1.1rem;background:rgba(10,15,13,.85);border:1px solid var(--text-soft);border-radius:999px;color:var(--text);font:500 .9rem var(--sans);cursor:pointer}
+.calm[aria-pressed=true]{background:var(--glow);border-color:var(--glow);color:var(--night)}
+
+.card{position:relative}
+.card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(100deg,rgba(255,217,138,.42),rgba(255,217,138,0) 60%);opacity:0;transition:opacity 1.2s var(--ease) .3s}
+.scene[data-lit=true] .card::after{opacity:1}
+.scene[data-lit=true] .card{box-shadow:0 30px 60px -20px rgba(0,0,0,.85),-40px 0 90px rgba(255,217,138,.3)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pop{from{opacity:0;transform:translateY(12px) scale(.97)}}
+@media(max-width:840px){.stage{grid-template-columns:minmax(0,1fr);justify-items:center}.lamp svg{max-width:230px}.head{transform:rotate(-45deg)}.card{width:100%;max-width:420px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important;transition-delay:0s!important}}
+[data-calm=true] *,[data-calm=true] *::before,[data-calm=true] *::after{animation:none!important;transition-duration:.01ms!important;transition-delay:0s!important}
+</style>
+</head>
+<body>
+<main class="scene" id="scene" data-lit="false">
+<canvas id="fog" aria-hidden="true"></canvas>
+<div class="pool" aria-hidden="true"></div>
+<div class="stage">
+
+<section class="lamp" aria-label="Luminária">
+<h1 class="sr">Acesso ao sistema</h1>
+<svg id="svg" viewBox="0 0 320 380" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a4144"/><stop offset=".5" stop-color="#14181a"/><stop offset="1" stop-color="#07090a"/></linearGradient>
+<linearGradient id="g6" x1="0" x2="1"><stop offset="0" stop-color="#1c2123"/><stop offset=".4" stop-color="#3a4144"/><stop offset="1" stop-color="#0f1213"/></linearGradient>
+<radialGradient id="g2" cx=".5" cy=".75" r=".75"><stop offset="0" stop-color="#fff3c4"/><stop offset=".5" stop-color="#ffd98a" stop-opacity=".8"/><stop offset="1" stop-color="#c8993a" stop-opacity="0"/></radialGradient>
+<linearGradient id="g3" x1="0" x2="1"><stop offset="0" stop-color="#5a3c0c"/><stop offset=".3" stop-color="#c8993a"/><stop offset=".5" stop-color="#f6dc9b"/><stop offset=".75" stop-color="#a77a22"/><stop offset="1" stop-color="#3b2706"/></linearGradient>
+<linearGradient id="g4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd98a" stop-opacity=".5"/><stop offset="1" stop-color="#ffd98a" stop-opacity="0"/></linearGradient>
+<radialGradient id="g5" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#fff6d6"/><stop offset=".5" stop-color="#d9a838"/><stop offset="1" stop-color="#6b4a12"/></radialGradient>
+</defs>
+<ellipse cx="112" cy="357" rx="66" ry="9" fill="#000" opacity=".4"/>
+<ellipse cx="112" cy="352" rx="62" ry="11" fill="#0b0d0e"/>
+<rect x="50" y="343" width="124" height="9" fill="#0b0d0e"/>
+<ellipse cx="112" cy="343" rx="62" ry="11" fill="url(#g6)"/>
+<g stroke="#14181a" stroke-width="4.5" stroke-linecap="round">
+<line x1="107" y1="334" x2="79" y2="176"/><line x1="119" y1="332" x2="91" y2="174"/>
+<line x1="84" y1="170" x2="242" y2="96"/><line x1="88" y1="179" x2="246" y2="105"/>
+</g>
+<g stroke="#8b949a" stroke-width="1.4" stroke-dasharray="2.5 2.5"><line x1="113" y1="330" x2="85" y2="180"/><line x1="86" y1="175" x2="244" y2="101"/></g>
+<polygon points="62,186 106,186 84,150" fill="url(#g3)"/><polygon points="74,181 94,181 84,163" fill="#0b0d0e"/>
+<rect x="100" y="326" width="24" height="16" rx="4" fill="url(#g3)"/>
+<g transform="rotate(-30 246 96)"><rect x="236" y="86" width="20" height="20" rx="4" fill="url(#g3)"/><circle cx="246" cy="96" r="3.5" fill="#0b0d0e"/></g>
+<g class="head">
+<polygon class="beam" points="234,112 290,112 432,520 92,520" fill="url(#g4)"/>
+<rect x="256" y="90" width="12" height="8" fill="#0b0d0e"/>
+<rect x="251" y="76" width="22" height="16" rx="2" fill="url(#g3)"/>
+<path class="shade" d="M229 112C229 78 295 78 295 112Z" fill="url(#g1)"/>
+<ellipse cx="262" cy="112" rx="33" ry="7" fill="#2a2f31"/>
+<ellipse class="glow" cx="262" cy="112" rx="33" ry="7" fill="url(#g2)"/>
+<ellipse class="bulb" cx="262" cy="113" rx="15" ry="5" fill="#fff6d6"/>
+<path d="M240 96C243 86 252 82 258 82" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="3" stroke-linecap="round"/>
+</g>
+<line id="chain" class="chain" x1="246" y1="104" x2="246" y2="214"/>
+<g id="pull" class="pull" role="switch" tabindex="0" aria-checked="false" aria-label="Luz da luminária" aria-describedby="hint">
+<g id="bead" transform="translate(246 214)"><circle r="32" fill="transparent"/><circle class="ring" r="15"/><circle class="bead" r="9"/><path d="M-4 9L0 26L4 9Z" fill="url(#g3)"/></g>
+</g>
+</svg>
+<p class="hint" id="hint">Puxe a corrente para acender a luz e entrar.</p>
+</section>
+
+<section class="card" id="card" aria-labelledby="ttl" inert>
+<h2 id="ttl">Bem-vindo de volta</h2>
+<p class="sub">Entre com seu e-mail ou usuário.</p>
+<form id="form" novalidate>
+<div class="field">
+<label for="user">E-mail ou usuário</label>
+<input class="input" id="user" type="text" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="nome@dominio.com" required aria-describedby="userErr">
+<span class="err" id="userErr"></span>
+</div>
+<div class="field">
+<div class="row"><label for="pass">Senha</label><button type="button" class="link" id="openForgot">Esqueci a senha</button></div>
+<div class="pw">
+<input class="input" id="pass" type="password" autocomplete="current-password" placeholder="Mínimo de 6 caracteres" required aria-describedby="passErr">
+<button type="button" class="toggle" id="toggle" aria-label="Mostrar senha">Mostrar</button>
+</div>
+<span class="err" id="passErr"></span>
+</div>
+<label class="check"><input type="checkbox" id="remember"><span>Manter conectado por 30 dias</span></label>
+<p class="msg" id="formMsg" role="status"></p>
+<button type="submit" class="btn" id="submit"><span>Entrar</span></button>
+</form>
+<p class="or">ou entre com</p>
+<div class="alt">
+<button type="button" class="ghost" data-social="Google"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.761H12.545z"/></svg>Google</button>
+<button type="button" class="ghost" data-social="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/></svg>GitHub</button>
+</div>
+</section>
+
+</div>
+</main>
+
+<button type="button" class="calm" id="calm" aria-pressed="false">Pausar efeitos</button>
+<p class="sr" id="live" role="status" aria-live="polite"></p>
+
+<dialog id="forgot" aria-labelledby="ft">
+<div class="dlg">
+<h2 id="ft">Recuperar acesso</h2>
+<p class="sub">Informe o e-mail da sua conta para receber o link de redefinição de senha.</p>
+<form id="forgotForm" novalidate>
+<div class="field">
+<label for="fmail">E-mail da conta</label>
+<input class="input" id="fmail" type="email" autocomplete="email" placeholder="nome@dominio.com" required aria-describedby="fMsg">
+</div>
+<p class="msg" id="fMsg" role="status"></p>
+<div class="actions"><button type="button" class="ghost" id="closeForgot" style="padding:0 1.25rem">Cancelar</button><button type="submit" class="btn">Enviar link</button></div>
+</form>
+</div>
+</dialog>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const scene = $('scene'), live = $('live');
+let calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const say = m => { live.textContent = ''; requestAnimationFrame(() => live.textContent = m); };
+
+/* Fumaça: canvas simples; em modo calmo desenha um único quadro estático */
+const Fog = (() => {
+  const c = $('fog'), x = c.getContext('2d');
+  let w = 0, h = 0, ps = [], raf = 0;
+  const mk = first => ({ x: Math.random() * w, y: first ? Math.random() * h : h + 120, r: 90 + Math.random() * 130,
+    vx: (Math.random() - .5) * .35, vy: -.1 - Math.random() * .25, a: .05 + Math.random() * .08 });
+  const draw = () => {
+    x.clearRect(0, 0, w, h);
+    for (const p of ps) {
+      const g = x.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+      g.addColorStop(0, `rgba(120,190,160,${p.a})`); g.addColorStop(1, 'rgba(10,15,13,0)');
+      x.fillStyle = g; x.beginPath(); x.arc(p.x, p.y, p.r, 0, 7); x.fill();
+    }
+  };
+  const step = () => {
+    ps.forEach((p, i) => { p.x += p.vx; p.y += p.vy; if (p.y < -p.r) ps[i] = mk(false); });
+    draw(); raf = calm ? 0 : requestAnimationFrame(step);
+  };
+  const size = () => { w = c.width = innerWidth; h = c.height = innerHeight; draw(); };
+  const start = () => { cancelAnimationFrame(raf); calm ? draw() : step(); };
+  return { start, init() { size(); ps = Array.from({ length: 28 }, () => mk(true)); addEventListener('resize', size); start(); } };
+})();
+
+/* Luminária: corrente com mola; arrastar, tocar, Enter ou Espaço acendem a luz */
+const Lamp = (() => {
+  const REST = { x: 246, y: 214 }, MAX = 60, TRIG = 32, K = 260, D = 16;
+  const svg = $('svg'), chain = $('chain'), pull = $('pull'), bead = $('bead'), hint = $('hint'), card = $('card');
+  let lit = false, drag = false, fired = false, maxY = 0, raf = 0, t0 = 0, g = { x: 0, y: 0 };
+  const o = { x: 0, y: 0, vx: 0, vy: 0 };
+  const pt = e => { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
+  const draw = () => {
+    const x = REST.x + o.x, y = REST.y + o.y;
+    chain.setAttribute('x2', x); chain.setAttribute('y2', y); bead.setAttribute('transform', `translate(${x} ${y})`);
+  };
+  const click = () => {
+    try {
+      const A = window.AudioContext || window.webkitAudioContext; if (!A) return;
+      const c = new A(), s = c.createOscillator(), v = c.createGain(), t = c.currentTime;
+      s.type = 'triangle'; s.frequency.setValueAtTime(1100, t); s.frequency.exponentialRampToValueAtTime(160, t + .05);
+      v.gain.setValueAtTime(.07, t); v.gain.exponentialRampToValueAtTime(.0001, t + .06);
+      s.connect(v); v.connect(c.destination); s.start(); s.stop(t + .07); s.onended = () => c.close();
+    } catch (_) {}
+  };
+  const toggle = () => {
+    lit = !lit; scene.dataset.lit = lit; pull.setAttribute('aria-checked', lit); card.inert = !lit;
+    hint.textContent = lit ? 'Luz acesa. Puxe de novo para apagar.' : 'Puxe a corrente para acender a luz e entrar.';
+    if (!lit) { if ($('forgot').open) $('forgot').close(); if (card.contains(document.activeElement)) pull.focus(); }
+    say(lit ? 'Luz acesa. O formulário de acesso está disponível.' : 'Luz apagada. O formulário de acesso foi ocultado.');
+    click();
+  };
+  const tick = now => {
+    const dt = Math.min((now - t0) / 1000, .032); t0 = now;
+    o.vx += (-K * o.x - D * o.vx) * dt; o.vy += (-K * o.y - D * o.vy) * dt; o.x += o.vx * dt; o.y += o.vy * dt; draw();
+    if (Math.abs(o.x) + Math.abs(o.y) + Math.abs(o.vx) + Math.abs(o.vy) > .05) raf = requestAnimationFrame(tick);
+    else { o.x = o.y = o.vx = o.vy = 0; draw(); raf = 0; }
+  };
+  const spring = () => {
+    cancelAnimationFrame(raf);
+    if (calm) { o.x = o.y = o.vx = o.vy = 0; draw(); return; }
+    t0 = performance.now(); raf = requestAnimationFrame(tick);
+  };
+  const nudge = v => { o.vy = v; spring(); };
+  const release = tap => {
+    if (!drag) return; drag = false; pull.classList.remove('drag');
+    if (tap && !fired && maxY < 6) { toggle(); o.vy = 300; }
+    spring();
+  };
+  return { init() {
+    draw();
+    pull.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.preventDefault(); pull.setPointerCapture(e.pointerId); cancelAnimationFrame(raf);
+      const p = pt(e); g = { x: p.x - REST.x - o.x, y: p.y - REST.y - o.y };
+      drag = true; fired = false; maxY = 0; pull.classList.add('drag');
+    });
+    pull.addEventListener('pointermove', e => {
+      if (!drag) return; const p = pt(e);
+      o.y = Math.max(0, Math.min(MAX, p.y - g.y - REST.y));
+      o.x = Math.max(-12, Math.min(12, (p.x - g.x - REST.x) * .3));
+      maxY = Math.max(maxY, o.y);
+      if (!fired && o.y >= TRIG) { fired = true; toggle(); }
+      draw();
+    });
+    pull.addEventListener('pointerup', () => release(true));
+    pull.addEventListener('pointercancel', () => release(false));
+    pull.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); nudge(450); }
+    });
+    if (!calm) setTimeout(() => { if (!lit && !drag) nudge(240); }, 1200);
+  } };
+})();
+
+/* Formulários: validação inline, sem alert(), foco no primeiro campo com erro */
+const Forms = (() => {
+  const f = $('form'), user = $('user'), pass = $('pass'), msg = $('formMsg'), btn = $('submit');
+  const setErr = (el, t) => {
+    $(el.id + 'Err').textContent = t; el.classList.toggle('error', !!t);
+    t ? el.setAttribute('aria-invalid', 'true') : el.removeAttribute('aria-invalid');
+  };
+  const show = (el, t, bad) => { el.textContent = t; el.classList.toggle('bad', !!bad); };
+  const mail = v => /^\S+@\S+\.\S+$/.test(v);
+  const checkUser = v => !v ? 'Informe seu e-mail ou usuário.'
+    : v.includes('@') ? (mail(v) ? '' : 'Esse e-mail parece incompleto. Exemplo: nome@dominio.com.')
+    : v.length < 3 ? 'O usuário precisa ter pelo menos 3 caracteres.' : '';
+  const checkPass = v => !v ? 'Informe sua senha.' : v.length < 6 ? 'A senha precisa ter pelo menos 6 caracteres.' : '';
+  return { init() {
+    user.addEventListener('input', () => setErr(user, ''));
+    pass.addEventListener('input', () => setErr(pass, ''));
+    $('toggle').addEventListener('click', e => {
+      const hide = pass.type === 'password'; pass.type = hide ? 'text' : 'password';
+      e.currentTarget.textContent = hide ? 'Ocultar' : 'Mostrar';
+      e.currentTarget.setAttribute('aria-label', hide ? 'Ocultar senha' : 'Mostrar senha');
+    });
+    document.querySelectorAll('[data-social]').forEach(b => b.addEventListener('click', () =>
+      show(msg, `Entrar com ${b.dataset.social} não está disponível nesta demonstração.`, false)));
+    f.addEventListener('submit', e => {
+      e.preventDefault();
+      if (btn.getAttribute('aria-disabled') === 'true') return;
+      const eu = checkUser(user.value.trim()), ep = checkPass(pass.value);
+      setErr(user, eu); setErr(pass, ep);
+      const bad = [eu && user, ep && pass].filter(Boolean);
+      if (bad.length) {
+        show(msg, bad.length > 1 ? 'Corrija os 2 campos para continuar.' : 'Corrija o campo indicado para continuar.', true);
+        bad[0].focus(); return;
+      }
+      show(msg, 'Verificando seus dados…', false);
+      btn.setAttribute('aria-disabled', 'true'); btn.classList.add('busy');
+      setTimeout(() => {
+        btn.removeAttribute('aria-disabled'); btn.classList.remove('busy');
+        show(msg, 'Acesso confirmado. Esta é uma demonstração: nenhum dado foi enviado.', false);
+      }, 1500);
+    });
+
+    const dlg = $('forgot'), fm = $('fmail'), fMsg = $('fMsg');
+    $('openForgot').addEventListener('click', () => dlg.showModal());
+    $('closeForgot').addEventListener('click', () => dlg.close());
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+    dlg.addEventListener('close', () => { fMsg.textContent = ''; fm.removeAttribute('aria-invalid'); });
+    $('forgotForm').addEventListener('submit', e => {
+      e.preventDefault();
+      if (!mail(fm.value.trim())) {
+        fm.setAttribute('aria-invalid', 'true'); show(fMsg, 'Informe um e-mail válido. Exemplo: nome@dominio.com.', true); fm.focus(); return;
+      }
+      fm.removeAttribute('aria-invalid');
+      show(fMsg, 'Se esse e-mail estiver cadastrado, você receberá o link em instantes.', false);
+    });
+  } };
+})();
+
+const calmBtn = $('calm');
+const applyCalm = () => { scene.dataset.calm = calm; document.body.dataset.calm = calm; calmBtn.setAttribute('aria-pressed', calm); Fog.start(); };
+calmBtn.addEventListener('click', () => { calm = !calm; applyCalm(); });
+
+Fog.init(); Lamp.init(); Forms.init(); applyCalm();
+</script>
+</body>
+</html>
